@@ -81,8 +81,8 @@ export default function Home() {
             <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto" style={{background: 'rgba(52, 168, 83, 0.1)'}}>
               <div className="w-6 h-6 rounded-full" style={{background: 'var(--google-green)'}}></div>
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Privacy First</h3>
-            <p className="text-sm text-foreground/60 leading-relaxed">Your data stays secure with enterprise-grade encryption</p>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Decluttered Inbox</h3>
+            <p className="text-sm text-foreground/60 leading-relaxed">Simplify your digital space for a clearer mind</p>
           </div>
         </div>
 
