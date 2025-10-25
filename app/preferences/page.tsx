@@ -55,7 +55,7 @@ export default function Preferences() {
 
   const handleContinue = () => {
     console.log('User preferences:', preferences);
-    router.push('/');
+    router.push('/dashboard');
   };
 
   return (
