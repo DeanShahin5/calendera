@@ -66,7 +66,7 @@ export default function Home() {
               <div className="w-6 h-6 rounded-full" style={{background: 'var(--google-red)'}}></div>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Smart Categorization</h3>
-            <p className="text-sm text-foreground/60 leading-relaxed">AI learns your patterns and automatically organizes incoming mail</p>
+            <p className="text-sm text-foreground/60 leading-relaxed">AI automatically organizes incoming mail based on your preferences</p>
           </div>
 
           <div className="p-6 bg-surface border border-border/50 rounded-lg hover:border-[var(--google-blue)] transition-all duration-300">
@@ -81,8 +81,8 @@ export default function Home() {
             <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 mx-auto" style={{background: 'rgba(52, 168, 83, 0.1)'}}>
               <div className="w-6 h-6 rounded-full" style={{background: 'var(--google-green)'}}></div>
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Privacy First</h3>
-            <p className="text-sm text-foreground/60 leading-relaxed">Your data stays secure with enterprise-grade encryption</p>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Decluttered Inbox</h3>
+            <p className="text-sm text-foreground/60 leading-relaxed">Simplify your digital space for a clearer mind</p>
           </div>
         </div>
 
@@ -90,8 +90,26 @@ export default function Home() {
         <div className="animate-stagger-4">
           <Link
             href="/authentication"
-            className="group relative inline-flex items-center gap-3 px-10 py-5 bg-foreground text-background text-xl font-medium rounded-full hover:gap-5 transition-all duration-300 shadow-lg hover:shadow-2xl overflow-hidden"
+            className="group relative inline-flex items-center gap-3 px-10 py-5 bg-foreground text-background text-xl font-medium rounded-full hover:gap-5 transition-all duration-300 shadow-lg hover:shadow-2xl"
+            style={{
+              overflow: 'visible'
+            }}
           >
+            {/* Animated rainbow border on hover */}
+            <span
+              className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                padding: '5px',
+                background: 'linear-gradient(90deg, var(--google-red), var(--google-blue), var(--google-yellow), var(--google-green), var(--google-red))',
+                backgroundSize: '200% 100%',
+                animation: 'rainbow-slide 2s linear infinite',
+                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                WebkitMaskComposite: 'xor',
+                maskComposite: 'exclude',
+                pointerEvents: 'none'
+              }}
+            ></span>
+
             <span className="relative z-10">Get Started</span>
             <svg
               className="relative z-10 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
@@ -101,19 +119,8 @@ export default function Home() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-
-            {/* Animated background accent */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                background: 'linear-gradient(90deg, var(--google-red), var(--google-blue), var(--google-yellow), var(--google-green))',
-                transform: 'translateX(-100%)',
-                animation: 'slide-bg 3s linear infinite'
-              }}
-            ></div>
           </Link>
 
-          <p className="mt-6 text-sm text-foreground/50">No credit card required • 2 minute setup</p>
         </div>
       </main>
     </div>
