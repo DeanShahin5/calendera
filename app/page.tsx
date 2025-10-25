@@ -66,7 +66,7 @@ export default function Home() {
               <div className="w-6 h-6 rounded-full" style={{background: 'var(--google-red)'}}></div>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Smart Categorization</h3>
-            <p className="text-sm text-foreground/60 leading-relaxed">AI learns your patterns and automatically organizes incoming mail</p>
+            <p className="text-sm text-foreground/60 leading-relaxed">AI automatically organizes incoming mail based on your preferences</p>
           </div>
 
           <div className="p-6 bg-surface border border-border/50 rounded-lg hover:border-[var(--google-blue)] transition-all duration-300">
@@ -113,7 +113,6 @@ export default function Home() {
             ></div>
           </Link>
 
-          <p className="mt-6 text-sm text-foreground/50">No credit card required • 2 minute setup</p>
         </div>
       </main>
     </div>
