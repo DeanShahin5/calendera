@@ -134,6 +134,15 @@ body {
   }
 }
 
+@keyframes rainbow-slide {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
 /* Animation utility classes */
 .animate-stagger-1 {
   animation: stagger-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;

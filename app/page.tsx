@@ -90,8 +90,26 @@ export default function Home() {
         <div className="animate-stagger-4">
           <Link
             href="/authentication"
-            className="group relative inline-flex items-center gap-3 px-10 py-5 bg-foreground text-background text-xl font-medium rounded-full hover:gap-5 transition-all duration-300 shadow-lg hover:shadow-2xl overflow-hidden"
+            className="group relative inline-flex items-center gap-3 px-10 py-5 bg-foreground text-background text-xl font-medium rounded-full hover:gap-5 transition-all duration-300 shadow-lg hover:shadow-2xl"
+            style={{
+              overflow: 'visible'
+            }}
           >
+            {/* Animated rainbow border on hover */}
+            <span
+              className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                padding: '5px',
+                background: 'linear-gradient(90deg, var(--google-red), var(--google-blue), var(--google-yellow), var(--google-green), var(--google-red))',
+                backgroundSize: '200% 100%',
+                animation: 'rainbow-slide 2s linear infinite',
+                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                WebkitMaskComposite: 'xor',
+                maskComposite: 'exclude',
+                pointerEvents: 'none'
+              }}
+            ></span>
+
             <span className="relative z-10">Get Started</span>
             <svg
               className="relative z-10 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
@@ -101,16 +119,6 @@ export default function Home() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
-
-            {/* Animated background accent */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{
-                background: 'linear-gradient(90deg, var(--google-red), var(--google-blue), var(--google-yellow), var(--google-green))',
-                transform: 'translateX(-100%)',
-                animation: 'slide-bg 3s linear infinite'
-              }}
-            ></div>
           </Link>
 
         </div>
