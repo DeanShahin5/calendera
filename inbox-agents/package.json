@@ -1,0 +1,24 @@
+{
+  "name": "ai-gmail-agent",
+  "version": "1.0.0",
+  "description": "AI-powered Gmail monitoring and organization system",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node test-monitor.js"
+  },
+  "keywords": ["ai", "gmail", "automation", "claude"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@google-cloud/local-auth": "^3.0.1",
+    "dotenv": "^16.3.1",
+    "googleapis": "^128.0.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
