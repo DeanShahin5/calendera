@@ -25,7 +25,7 @@ export default function Home() {
 
         {/* Tagline */}
         <p className="text-xl sm:text-2xl md:text-3xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed font-medium px-4 animate-fade-in-up">
-          AI-powered email organization for busy professionals.
+          Declutter your notifications with AI-powered email organization.
         </p>
 
         {/* Features badges */}
