@@ -82,7 +82,7 @@ export default function Authentication() {
                   <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{background: 'rgba(234, 67, 53, 0.1)'}}>
                     <div className="w-2 h-2 rounded-full" style={{background: 'var(--google-red)'}}></div>
                   </div>
-                  <span>Your Gmail inbox for smart categorization</span>
+                  <span>Gmail inbox for smart categorization</span>
                 </div>
                 <div className="flex items-start gap-3 text-sm text-foreground/60">
                   <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{background: 'rgba(66, 133, 244, 0.1)'}}>
@@ -100,17 +100,6 @@ export default function Authentication() {
             </div>
           </div>
 
-          {/* Privacy notice */}
-          <div className="mt-8 pt-6 border-t border-border animate-stagger-3">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{color: 'var(--google-green)'}} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <p className="text-xs text-foreground/50 leading-relaxed">
-                Your data is encrypted end-to-end. We never share your information with third parties. Read our <span className="underline cursor-pointer hover:text-foreground/70">Privacy Policy</span> for details.
-              </p>
-            </div>
-          </div>
         </div>
       </main>
     </div>
