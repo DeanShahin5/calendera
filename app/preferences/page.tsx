@@ -47,14 +47,14 @@ export default function Preferences() {
       id: 'smartCategorization',
       title: 'Auto-Categorization',
       description: 'Automatically organize emails into intelligent categories',
-      color: 'var(--google-red)',
+      color: 'var(--google-blue)',
       enabled: true,
     },
     {
       id: 'priorityNotifications',
       title: 'Priority Alerts',
       description: 'Only notify you about high-priority emails',
-      color: 'var(--google-blue)',
+      color: 'var(--google-red)',
       enabled: false,
     },
   ]);
@@ -158,6 +158,49 @@ function PreferenceCard({
   onToggle: () => void;
   index: number;
 }) {
+  const getIcon = (id: string) => {
+    switch (id) {
+      case 'gmail':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+          </svg>
+        );
+      case 'calendar':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          </svg>
+        );
+      case 'dailySummary':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        );
+      case 'taskReminders':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+          </svg>
+        );
+      case 'smartCategorization':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+          </svg>
+        );
+      case 'priorityNotifications':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
       className="group relative bg-surface border-2 border-border rounded-xl p-6 hover:border-foreground/20 transition-all duration-300 cursor-pointer"
@@ -183,15 +226,10 @@ function PreferenceCard({
             style={{
               background: `${preference.color}15`,
               opacity: preference.enabled ? 1 : 0.4,
+              color: preference.color,
             }}
           >
-            <div
-              className="w-4 h-4 rounded-full transition-all duration-300"
-              style={{
-                background: preference.color,
-                opacity: preference.enabled ? 1 : 0.5,
-              }}
-            ></div>
+            {getIcon(preference.id)}
           </div>
 
           {/* Content */}
@@ -207,18 +245,17 @@ function PreferenceCard({
           </p>
         </div>
 
-        {/* Toggle switch */}
+        {/* Toggle switch - plain white */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
           }}
-          className={`relative flex-shrink-0 inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface ${
+          className={`relative flex-shrink-0 inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-foreground/20 ${
             preference.enabled ? 'justify-end' : 'justify-start'
           }`}
           style={{
-            background: preference.enabled ? preference.color : 'var(--border)',
-            focusRingColor: preference.color,
+            background: preference.enabled ? 'var(--foreground)' : 'var(--border)',
           }}
           aria-label={`Toggle ${preference.title}`}
         >
