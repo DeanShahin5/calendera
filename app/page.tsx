@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4 dark:from-gray-900 dark:via-gray-800 dark:to-blue-950">
@@ -43,7 +45,7 @@ export default function Home() {
 
         {/* CTA Button */}
         <div className="pt-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <button className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg sm:text-xl font-semibold rounded-full shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 dark:hover:shadow-blue-400/30 active:scale-95">
+          <Link href="/authentication" className="group relative inline-block px-8 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg sm:text-xl font-semibold rounded-full shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50 dark:hover:shadow-blue-400/30 active:scale-95">
             {/* Button glow effect */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-70 dark:group-hover:opacity-50"></div>
 
@@ -59,7 +61,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
-          </button>
+          </Link>
         </div>
 
         {/* Trust indicator */}
