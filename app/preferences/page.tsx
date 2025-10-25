@@ -3,120 +3,129 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Preference {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+  enabled: boolean;
+}
+
 export default function Preferences() {
   const router = useRouter();
 
-  const [preferences, setPreferences] = useState({
-    gmail: true,
-    calendar: true,
-    dailySummary: true,
-    taskReminders: true,
-    smartCategorization: true,
-    priorityNotifications: false,
-  });
+  const [preferences, setPreferences] = useState<Preference[]>([
+    {
+      id: 'gmail',
+      title: 'Gmail Sync',
+      description: 'Sync your Gmail inbox for smart organization and filtering',
+      color: 'var(--google-red)',
+      enabled: true,
+    },
+    {
+      id: 'calendar',
+      title: 'Calendar Integration',
+      description: 'Integrate Google Calendar for schedule optimization',
+      color: 'var(--google-blue)',
+      enabled: true,
+    },
+    {
+      id: 'dailySummary',
+      title: 'Daily Digest',
+      description: 'Receive a daily summary of important emails and tasks',
+      color: 'var(--google-yellow)',
+      enabled: true,
+    },
+    {
+      id: 'taskReminders',
+      title: 'Smart Reminders',
+      description: 'Get notified about upcoming deadlines and tasks',
+      color: 'var(--google-green)',
+      enabled: true,
+    },
+    {
+      id: 'smartCategorization',
+      title: 'Auto-Categorization',
+      description: 'Automatically organize emails into intelligent categories',
+      color: 'var(--google-red)',
+      enabled: true,
+    },
+    {
+      id: 'priorityNotifications',
+      title: 'Priority Alerts',
+      description: 'Only notify you about high-priority emails',
+      color: 'var(--google-blue)',
+      enabled: false,
+    },
+  ]);
 
-  const handleToggle = (key: keyof typeof preferences) => {
-    setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleToggle = (id: string) => {
+    setPreferences(prev =>
+      prev.map(pref =>
+        pref.id === id ? { ...pref, enabled: !pref.enabled } : pref
+      )
+    );
   };
 
   const handleContinue = () => {
-    // Frontend-only navigation - you can change this route as needed
     console.log('User preferences:', preferences);
-    router.push('/'); // Navigate to home or next page
+    router.push('/');
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4 py-12 dark:from-gray-900 dark:via-gray-800 dark:to-blue-950">
-      {/* Animated background orbs */}
-      <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl animate-pulse dark:bg-blue-600/10"></div>
-      <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-purple-400/20 blur-3xl animate-pulse dark:bg-purple-600/10" style={{ animationDelay: '1s' }}></div>
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      {/* Grid pattern background */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-30"></div>
 
-      {/* Main content card */}
-      <main className="relative z-10 w-full max-w-2xl">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 sm:p-10 space-y-8">
+      {/* Animated background shapes */}
+      <div
+        className="absolute top-[10%] right-[5%] w-40 h-40 animate-morph opacity-5"
+        style={{ background: 'var(--google-yellow)', animationDelay: '1s' }}
+      ></div>
+      <div
+        className="absolute bottom-[15%] left-[8%] w-32 h-32 rounded-full animate-float opacity-5"
+        style={{ background: 'var(--google-green)', animationDelay: '3s' }}
+      ></div>
+
+      {/* Main content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-16">
+        <main className="w-full max-w-3xl">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
-              Customize Your Experience
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              Select the features you'd like to enable for your MailMind account
-            </p>
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-blue-500 to-transparent rounded-full dark:via-blue-400"></div>
-              <div className="h-0.5 w-6 bg-gradient-to-r from-transparent via-purple-500 to-transparent rounded-full dark:via-purple-400"></div>
-              <div className="h-0.5 w-8 bg-gradient-to-r from-transparent via-blue-500 to-transparent rounded-full dark:via-blue-400"></div>
+          <div className="text-center mb-12 animate-stagger-1">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full" style={{background: 'var(--google-red)'}}></div>
+              <div className="w-2 h-2 rounded-full" style={{background: 'var(--google-blue)'}}></div>
+              <div className="w-2 h-2 rounded-full" style={{background: 'var(--google-yellow)'}}></div>
+              <div className="w-2 h-2 rounded-full" style={{background: 'var(--google-green)'}}></div>
             </div>
+            <h1 style={{fontFamily: 'var(--font-serif)'}} className="text-5xl sm:text-6xl font-normal text-foreground mb-3">
+              Customize
+            </h1>
+            <div className="w-16 h-0.5 mx-auto mb-6" style={{background: 'linear-gradient(90deg, var(--google-red), var(--google-blue), var(--google-yellow), var(--google-green))'}}></div>
+            <p className="text-foreground/60 text-lg leading-relaxed max-w-2xl mx-auto">
+              Select the features you'd like to enable for your intelligent workspace
+            </p>
           </div>
 
-          {/* Preferences form */}
-          <div className="space-y-4">
-            {/* Gmail Connection */}
-            <PreferenceToggle
-              title="Connect Gmail"
-              description="Sync your Gmail inbox for smart organization and filtering"
-              icon="📧"
-              enabled={preferences.gmail}
-              onToggle={() => handleToggle('gmail')}
-            />
-
-            {/* Calendar Connection */}
-            <PreferenceToggle
-              title="Connect Google Calendar"
-              description="Integrate your calendar for schedule optimization"
-              icon="📅"
-              enabled={preferences.calendar}
-              onToggle={() => handleToggle('calendar')}
-            />
-
-            {/* Daily Summary */}
-            <PreferenceToggle
-              title="Daily Summary Emails"
-              description="Receive a daily digest of important emails and tasks"
-              icon="📊"
-              enabled={preferences.dailySummary}
-              onToggle={() => handleToggle('dailySummary')}
-            />
-
-            {/* Task Reminders */}
-            <PreferenceToggle
-              title="Task Reminders"
-              description="Get notified about upcoming deadlines and tasks"
-              icon="⏰"
-              enabled={preferences.taskReminders}
-              onToggle={() => handleToggle('taskReminders')}
-            />
-
-            {/* Smart Categorization */}
-            <PreferenceToggle
-              title="Smart Categorization"
-              description="Automatically organize emails into intelligent categories"
-              icon="🏷️"
-              enabled={preferences.smartCategorization}
-              onToggle={() => handleToggle('smartCategorization')}
-            />
-
-            {/* Priority Notifications */}
-            <PreferenceToggle
-              title="Priority Notifications"
-              description="Only notify you about high-priority emails"
-              icon="🔔"
-              enabled={preferences.priorityNotifications}
-              onToggle={() => handleToggle('priorityNotifications')}
-            />
+          {/* Preferences grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12 animate-stagger-2">
+            {preferences.map((pref, index) => (
+              <PreferenceCard
+                key={pref.id}
+                preference={pref}
+                onToggle={() => handleToggle(pref.id)}
+                index={index}
+              />
+            ))}
           </div>
 
-          {/* Continue button */}
-          <div className="pt-4">
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-stagger-3">
             <button
               onClick={handleContinue}
-              className="group relative w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/50 dark:hover:shadow-blue-400/30 active:scale-[0.98]"
+              className="group relative w-full sm:w-auto px-10 py-4 bg-foreground text-background text-lg font-medium rounded-full hover:shadow-xl transition-all duration-300"
             >
-              {/* Button glow effect */}
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-70 dark:group-hover:opacity-50"></div>
-
-              {/* Button content */}
-              <span className="relative flex items-center justify-center gap-2">
+              <span className="relative z-10 flex items-center justify-center gap-2">
                 Continue
                 <svg
                   className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
@@ -124,66 +133,108 @@ export default function Preferences() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </span>
             </button>
           </div>
 
           {/* Info text */}
-          <p className="text-xs text-center text-gray-500 dark:text-gray-500 leading-relaxed">
-            You can change these preferences anytime in your account settings
+          <p className="text-center text-sm text-foreground/40 mt-8 animate-stagger-4">
+            You can modify these settings anytime from your dashboard
           </p>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-// Reusable toggle component
-function PreferenceToggle({
-  title,
-  description,
-  icon,
-  enabled,
+function PreferenceCard({
+  preference,
   onToggle,
+  index,
 }: {
-  title: string;
-  description: string;
-  icon: string;
-  enabled: boolean;
+  preference: Preference;
   onToggle: () => void;
+  index: number;
 }) {
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-200">
-      <div className="flex items-start gap-3 flex-1">
-        <span className="text-2xl mt-0.5">{icon}</span>
+    <div
+      className="group relative bg-surface border-2 border-border rounded-xl p-6 hover:border-foreground/20 transition-all duration-300 cursor-pointer"
+      onClick={onToggle}
+      style={{
+        animationDelay: `${index * 0.1}s`,
+      }}
+    >
+      {/* Colored accent bar */}
+      <div
+        className="absolute top-0 left-0 w-1 h-full rounded-l-xl transition-all duration-300"
+        style={{
+          background: preference.color,
+          opacity: preference.enabled ? 1 : 0.2,
+        }}
+      ></div>
+
+      <div className="flex items-start justify-between gap-4 pl-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
-            {title}
+          {/* Icon with preference color */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center mb-4 transition-all duration-300"
+            style={{
+              background: `${preference.color}15`,
+              opacity: preference.enabled ? 1 : 0.4,
+            }}
+          >
+            <div
+              className="w-4 h-4 rounded-full transition-all duration-300"
+              style={{
+                background: preference.color,
+                opacity: preference.enabled ? 1 : 0.5,
+              }}
+            ></div>
+          </div>
+
+          {/* Content */}
+          <h3 className="text-lg font-semibold text-foreground mb-2 transition-opacity duration-300"
+            style={{ opacity: preference.enabled ? 1 : 0.5 }}
+          >
+            {preference.title}
           </h3>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-            {description}
+          <p className="text-sm text-foreground/60 leading-relaxed transition-opacity duration-300"
+            style={{ opacity: preference.enabled ? 1 : 0.4 }}
+          >
+            {preference.description}
           </p>
         </div>
+
+        {/* Toggle switch */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          className={`relative flex-shrink-0 inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface ${
+            preference.enabled ? 'justify-end' : 'justify-start'
+          }`}
+          style={{
+            background: preference.enabled ? preference.color : 'var(--border)',
+            focusRingColor: preference.color,
+          }}
+          aria-label={`Toggle ${preference.title}`}
+        >
+          <span
+            className={`inline-block h-6 w-6 rounded-full bg-surface shadow-lg transition-all duration-300 ${
+              preference.enabled ? 'scale-110' : 'scale-100'
+            }`}
+          />
+        </button>
       </div>
 
-      {/* Toggle switch */}
-      <button
-        onClick={onToggle}
-        className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-          enabled
-            ? 'bg-gradient-to-r from-blue-600 to-purple-600'
-            : 'bg-gray-300 dark:bg-gray-600'
-        }`}
-        aria-label={`Toggle ${title}`}
-      >
-        <span
-          className={`inline-block h-5 w-5 sm:h-6 sm:w-6 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-            enabled ? 'translate-x-6 sm:translate-x-7' : 'translate-x-1'
-          }`}
-        />
-      </button>
+      {/* Hover effect overlay */}
+      <div
+        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"
+        style={{ background: preference.color }}
+      ></div>
     </div>
   );
 }

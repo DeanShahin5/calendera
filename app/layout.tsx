@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Serif_Display, Commissioner } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSerif = DM_Serif_Display({
+  weight: ["400"],
+  variable: "--font-serif",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const commissioner = Commissioner({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "MailMind - AI-Powered Email Organization",
-  description: "AI-powered email organization for busy professionals. Take control of your inbox with smart sorting and automation.",
+  title: "Calendera - AI-Powered Gmail Intelligence",
+  description: "Intelligent email organization powered by AI. Transform your Gmail into a productivity powerhouse.",
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${dmSerif.variable} ${commissioner.variable} antialiased`}
       >
         {children}
       </body>
