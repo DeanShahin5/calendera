@@ -143,6 +143,21 @@ body {
   }
 }
 
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Animation utility classes */
 .animate-stagger-1 {
   animation: stagger-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -182,6 +197,10 @@ body {
 
 .animate-slide-in {
   animation: slide-in-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Geometric background pattern */
