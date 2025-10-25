@@ -19,6 +19,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [userName] = useState('User'); // Will be replaced with Google Auth data
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   const [filters, setFilters] = useState<Filter[]>([
     { id: 'events', label: 'Events', enabled: false },
@@ -53,9 +54,12 @@ export default function Dashboard() {
     : categories.filter(cat => activeFilters.includes(cat.id));
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="relative min-h-screen bg-background overflow-hidden py-8 px-4">
+      {/* Grid pattern background */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-40"></div>
+
       {/* Account dropdown - top right */}
-      <div className="max-w-7xl mx-auto mb-6">
+      <div className="relative z-10 max-w-7xl mx-auto mb-6">
         <div className="flex justify-end">
           <div className="relative">
             <button
@@ -118,11 +122,11 @@ export default function Dashboard() {
       </div>
 
       {/* Main content container */}
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-surface-secondary border-2 border-surface rounded-2xl p-8 animate-stagger-1">
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <div className="bg-background border-4 border-surface rounded-2xl p-10 shadow-2xl animate-stagger-1">
 
           {/* Header section with welcome and filters */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8 pb-8 border-b border-border/50">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8 pb-8 border-b border-border/50">
             {/* Welcome message */}
             <div>
               <h1 style={{fontFamily: 'var(--font-serif)'}} className="text-4xl md:text-5xl text-foreground mb-2">
@@ -131,39 +135,65 @@ export default function Dashboard() {
               <p className="text-foreground/60">Here's your organized inbox</p>
             </div>
 
-            {/* Filter checkboxes */}
-            <div className="flex flex-col gap-3">
-              <p className="text-sm font-semibold text-foreground/80 mb-1">Filter by:</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {filters.map((filter) => (
-                  <label
-                    key={filter.id}
-                    className="flex items-center gap-2 cursor-pointer group"
-                  >
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={filter.enabled}
-                        onChange={() => handleFilterToggle(filter.id)}
-                        className="w-5 h-5 rounded border-2 border-border appearance-none checked:bg-foreground checked:border-foreground cursor-pointer transition-all duration-200"
-                      />
-                      {filter.enabled && (
-                        <svg
-                          className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-foreground group-hover:text-foreground/70 transition-colors duration-200">
-                      {filter.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
+            {/* Filter dropdown */}
+            <div className="relative z-50">
+              <button
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                className="flex items-center gap-3 px-5 py-3 bg-surface border-2 border-border rounded-xl hover:border-foreground/20 transition-all duration-200 min-w-[200px] justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-foreground/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-foreground">
+                    {activeFilters.length === 0 ? 'All Categories' : `${activeFilters.length} Selected`}
+                  </span>
+                </div>
+                <svg
+                  className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${
+                    showFilterMenu ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Filter dropdown menu */}
+              {showFilterMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface border-2 border-border rounded-xl shadow-2xl p-4 space-y-3 animate-stagger-1 z-50">
+                  {filters.map((filter) => (
+                    <label
+                      key={filter.id}
+                      className="flex items-center gap-2 cursor-pointer group"
+                    >
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={filter.enabled}
+                          onChange={() => handleFilterToggle(filter.id)}
+                          className="w-5 h-5 rounded border-2 border-border appearance-none checked:bg-foreground checked:border-foreground cursor-pointer transition-all duration-200"
+                        />
+                        {filter.enabled && (
+                          <svg
+                            className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm text-foreground group-hover:text-foreground/70 transition-colors duration-200">
+                        {filter.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -195,7 +225,7 @@ export default function Dashboard() {
                 </h2>
 
                 {/* Placeholder for AI-generated content */}
-                <div className="bg-surface border border-border/50 rounded-xl p-6 min-h-[120px] flex items-center justify-center">
+                <div className="bg-background border border-border/50 rounded-xl p-6 min-h-[120px] flex items-center justify-center">
                   <p className="text-foreground/40 text-sm">
                     Content will be populated by AI agents
                   </p>
