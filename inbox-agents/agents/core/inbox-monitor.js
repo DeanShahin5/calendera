@@ -1,14 +1,12 @@
 const { getGmailClient } = require('../../config/gmail-setup');
 const logger = require('../../utils/logger');
-const fs = require('fs').promises;
-const path = require('path');
+const Database = require('../../database');
 
 class InboxMonitorAgent {
   constructor() {
     this.gmail = null;
     this.lastCheckTime = null;
-    this.dataPath = process.env.DATA_PATH || './data';
-    this.stateFile = path.join(this.dataPath, 'monitor-state.json');
+    this.db = new Database();
   }
 
   /**
@@ -18,13 +16,13 @@ class InboxMonitorAgent {
     try {
       logger.info('Initializing Inbox Monitor Agent...');
       
+      // Initialize database
+      await this.db.initialize();
+      
       // Get Gmail client
       this.gmail = await getGmailClient();
       
-      // Create data directory if it doesn't exist
-      await fs.mkdir(this.dataPath, { recursive: true });
-      
-      // Load last check time
+      // Load last check time from database
       await this.loadState();
       
       logger.info('Inbox Monitor Agent initialized successfully');
@@ -36,33 +34,24 @@ class InboxMonitorAgent {
   }
 
   /**
-   * Load agent state from file
+   * Load agent state - get timestamp of most recent message
    */
   async loadState() {
     try {
-      const data = await fs.readFile(this.stateFile, 'utf8');
-      const state = JSON.parse(data);
-      this.lastCheckTime = state.lastCheckTime;
-      logger.info('Loaded previous state', { lastCheckTime: this.lastCheckTime });
+      const result = await this.db.get(
+        'SELECT MAX(timestamp) as last_timestamp FROM messages'
+      );
+      
+      if (result && result.last_timestamp) {
+        this.lastCheckTime = Math.floor(result.last_timestamp / 1000);
+        logger.info('Loaded previous state', { lastCheckTime: this.lastCheckTime });
+      } else {
+        logger.info('No previous state found, starting fresh');
+        this.lastCheckTime = Math.floor(Date.now() / 1000);
+      }
     } catch (error) {
-      // File doesn't exist or is corrupted, start fresh
-      logger.info('No previous state found, starting fresh');
+      logger.error('Error loading state', { error: error.message });
       this.lastCheckTime = Math.floor(Date.now() / 1000);
-    }
-  }
-
-  /**
-   * Save agent state to file
-   */
-  async saveState() {
-    try {
-      const state = {
-        lastCheckTime: this.lastCheckTime,
-        lastUpdated: new Date().toISOString()
-      };
-      await fs.writeFile(this.stateFile, JSON.stringify(state, null, 2));
-    } catch (error) {
-      logger.error('Failed to save state', { error: error.message });
     }
   }
 
@@ -97,7 +86,6 @@ class InboxMonitorAgent {
       
       // Update last check time
       this.lastCheckTime = Math.floor(Date.now() / 1000);
-      await this.saveState();
 
       return fullMessages;
     } catch (error) {
@@ -179,17 +167,26 @@ class InboxMonitorAgent {
   }
 
   /**
-   * Save messages to file for processing by other agents
+   * Save messages to database
    */
   async saveMessages(messages) {
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = path.join(this.dataPath, `messages-${timestamp}.json`);
+      let savedCount = 0;
       
-      await fs.writeFile(filename, JSON.stringify(messages, null, 2));
-      logger.info(`Saved ${messages.length} messages to ${filename}`);
+      for (const message of messages) {
+        try {
+          await this.db.insertMessage(message);
+          savedCount++;
+        } catch (error) {
+          logger.error('Error saving message', { 
+            id: message.id, 
+            error: error.message 
+          });
+        }
+      }
       
-      return filename;
+      logger.info(`Saved ${savedCount} messages to database`);
+      return savedCount;
     } catch (error) {
       logger.error('Error saving messages', { error: error.message });
       throw error;
@@ -206,25 +203,34 @@ class InboxMonitorAgent {
       if (messages.length > 0) {
         logger.info(`Processing ${messages.length} new messages`);
         
-        // Save messages for other agents to process
-        const filename = await this.saveMessages(messages);
+        // Save messages to database
+        const savedCount = await this.saveMessages(messages);
         
         // Return messages for immediate processing
         return {
           count: messages.length,
-          messages: messages,
-          savedTo: filename
+          saved: savedCount,
+          messages: messages
         };
       }
       
       return {
         count: 0,
-        messages: [],
-        savedTo: null
+        saved: 0,
+        messages: []
       };
     } catch (error) {
       logger.error('Error in monitoring loop', { error: error.message });
       throw error;
+    }
+  }
+
+  /**
+   * Cleanup
+   */
+  async cleanup() {
+    if (this.db) {
+      await this.db.close();
     }
   }
 }
