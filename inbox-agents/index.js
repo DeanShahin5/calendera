@@ -1,16 +1,24 @@
 require('dotenv').config();
 const cron = require('node-cron');
 const InboxMonitorAgent = require('./agents/core/inbox-monitor');
+const MessageProcessorAgent = require('./agents/core/message-processor');
 const logger = require('./utils/logger');
+
+let monitorAgent = null;
+let processorAgent = null;
 
 async function main() {
   logger.info('Starting AI Gmail Agent System...');
   
   // Initialize Inbox Monitor Agent
-  const monitorAgent = new InboxMonitorAgent();
-  
+  monitorAgent = new InboxMonitorAgent();
+
+  // Initialize Message Processor Agent
+  processorAgent = new MessageProcessorAgent();
+
   try {
     await monitorAgent.initialize();
+    await processorAgent.initialize();
     logger.info('All agents initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize agents', { error: error.message });
@@ -21,6 +29,13 @@ async function main() {
   logger.info('Running initial check...');
   const result = await monitorAgent.monitor();
   logger.info('Initial check complete', result);
+
+  // Process any new messages
+  if (result.count > 0) {
+    logger.info('Processing new messages...');
+    const processResult = await processorAgent.processMessages();
+    logger.info('Message processing complete', processResult);
+  }
 
   // Schedule periodic checks (every 5 minutes by default)
   const interval = process.env.GMAIL_CHECK_INTERVAL || 5;
@@ -33,17 +48,20 @@ async function main() {
     try {
       const result = await monitorAgent.monitor();
       logger.info('Scheduled check complete', { 
-        newMessages: result.count 
+        newMessages: result.count,
+        saved: result.saved
       });
       
       if (result.count > 0) {
         logger.info('New messages detected!', {
           count: result.count,
-          savedTo: result.savedTo
+          saved: result.saved
         });
-        
-        // TODO: Trigger Message Processing Agent here
-        // await messageProcessor.process(result.messages);
+
+        // Process new messages
+        logger.info('Processing new messages...');
+        const processResult = await processorAgent.processMessages();
+        logger.info('Message processing complete', processResult);
       }
     } catch (error) {
       logger.error('Error in scheduled check', { error: error.message });
@@ -55,15 +73,30 @@ async function main() {
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', () => {
+async function shutdown() {
   logger.info('Shutting down gracefully...');
-  process.exit(0);
-});
 
-process.on('SIGTERM', () => {
-  logger.info('Shutting down gracefully...');
+  if (monitorAgent) {
+    try {
+      await monitorAgent.cleanup();
+    } catch (error) {
+      logger.error('Error during monitor cleanup', { error: error.message });
+    }
+  }
+
+  if (processorAgent) {
+    try {
+      await processorAgent.cleanup();
+    } catch (error) {
+      logger.error('Error during processor cleanup', { error: error.message });
+    }
+  }
+
   process.exit(0);
-});
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 // Start the application
 main().catch(error => {
