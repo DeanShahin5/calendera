@@ -16,13 +16,6 @@ export default function Preferences() {
 
   const [preferences, setPreferences] = useState<Preference[]>([
     {
-      id: 'gmail',
-      title: 'Gmail Sync',
-      description: 'Sync your Gmail inbox for smart organization and filtering',
-      color: 'var(--google-red)',
-      enabled: true,
-    },
-    {
       id: 'calendar',
       title: 'Calendar Integration',
       description: 'Integrate Google Calendar for schedule optimization',
@@ -41,13 +34,6 @@ export default function Preferences() {
       title: 'Smart Reminders',
       description: 'Get notified about upcoming deadlines and tasks',
       color: 'var(--google-green)',
-      enabled: true,
-    },
-    {
-      id: 'smartCategorization',
-      title: 'Auto-Categorization',
-      description: 'Automatically organize emails into intelligent categories',
-      color: 'var(--google-blue)',
       enabled: true,
     },
     {
