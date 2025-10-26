@@ -62,6 +62,7 @@ export default function Dashboard() {
   const [hiddenRecruitmentIds, setHiddenRecruitmentIds] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(true);
   const [expandedSpamSenders, setExpandedSpamSenders] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const [events, setEvents] = useState<Event[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -379,6 +380,18 @@ export default function Dashboard() {
         newSet.delete(sender);
       } else {
         newSet.add(sender);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
       }
       return newSet;
     });
@@ -773,12 +786,28 @@ export default function Dashboard() {
             {/* Events */}
             {shouldShowCategory('events') && (
               <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                <button
+                  onClick={() => toggleSection('events')}
+                  className="w-full text-left mb-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(66,133,244)] to-[rgb(52,168,83)] shadow-[0_0_15px_rgba(66,133,244,0.6)]"></div>
-                  Events ({events.length})
-                </h2>
+                  <h2 className="text-4xl font-bold text-foreground flex-1">
+                    Events ({events.length})
+                  </h2>
+                  <svg
+                    className={`w-8 h-8 text-foreground transition-transform duration-300 ${
+                      expandedSections.has('events') ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+                {expandedSections.has('events') && (
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {events.length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No events found</p>
@@ -829,7 +858,8 @@ export default function Dashboard() {
                       </div>
                     ))
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -837,19 +867,37 @@ export default function Dashboard() {
             {shouldShowCategory('tasks') && (
               <div className="animate-stagger-2">
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-4xl font-bold text-foreground flex items-center gap-4">
-                    <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                    Tasks ({todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length})
-                  </h2>
                   <button
-                    onClick={() => setShowCompleted(!showCompleted)}
-                    className="text-lg font-semibold text-foreground/60 hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-foreground/5"
+                    onClick={() => toggleSection('tasks')}
+                    className="flex-1 text-left flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
                   >
-                    {showCompleted ? 'Hide' : 'Show'} completed
+                    <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
+                    <h2 className="text-4xl font-bold text-foreground flex-1">
+                      Tasks ({todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length})
+                    </h2>
+                    <svg
+                      className={`w-8 h-8 text-foreground transition-transform duration-300 ${
+                        expandedSections.has('tasks') ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
+                  {expandedSections.has('tasks') && (
+                    <button
+                      onClick={() => setShowCompleted(!showCompleted)}
+                      className="text-lg font-semibold text-foreground/60 hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-foreground/5 ml-4"
+                    >
+                      {showCompleted ? 'Hide' : 'Show'} completed
+                    </button>
+                  )}
                 </div>
 
-                <div className="space-y-6">
+                {expandedSections.has('tasks') && (
+                  <div className="space-y-6">
                   {/* Overdue */}
                   {hasOverdue && (
                     <div>
@@ -906,19 +954,36 @@ export default function Dashboard() {
                       <p className="text-foreground/40 text-sm">No tasks found</p>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Social */}
             {shouldShowCategory('social') && (
               <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                <button
+                  onClick={() => toggleSection('social')}
+                  className="w-full text-left mb-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(234,67,53)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
-                  Social ({socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length})
-                </h2>
+                  <h2 className="text-4xl font-bold text-foreground flex-1">
+                    Social ({socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length})
+                  </h2>
+                  <svg
+                    className={`w-8 h-8 text-foreground transition-transform duration-300 ${
+                      expandedSections.has('social') ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+                {expandedSections.has('social') && (
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No social messages found</p>
@@ -1009,19 +1074,36 @@ export default function Dashboard() {
                       );
                     })
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Spam */}
             {shouldShowCategory('promotions') && (
               <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                <button
+                  onClick={() => toggleSection('spam')}
+                  className="w-full text-left mb-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(234,67,53)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(234,67,53,0.6)]"></div>
-                  Spam ({promotionsMessages.length})
-                </h2>
+                  <h2 className="text-4xl font-bold text-foreground flex-1">
+                    Spam ({promotionsMessages.length})
+                  </h2>
+                  <svg
+                    className={`w-8 h-8 text-foreground transition-transform duration-300 ${
+                      expandedSections.has('spam') ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-4">
+                {expandedSections.has('spam') && (
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                   {promotionsMessages.length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No spam messages found</p>
@@ -1082,19 +1164,36 @@ export default function Dashboard() {
                       );
                     })
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Recruitment */}
             {shouldShowCategory('recruitment') && (
               <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                <button
+                  onClick={() => toggleSection('recruitment')}
+                  className="w-full text-left mb-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                  Recruitment ({recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length})
-                </h2>
+                  <h2 className="text-4xl font-bold text-foreground flex-1">
+                    Recruitment ({recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length})
+                  </h2>
+                  <svg
+                    className={`w-8 h-8 text-foreground transition-transform duration-300 ${
+                      expandedSections.has('recruitment') ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+                {expandedSections.has('recruitment') && (
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No recruitment opportunities found</p>
@@ -1185,7 +1284,8 @@ export default function Dashboard() {
                       );
                     })
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
