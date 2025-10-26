@@ -6,15 +6,32 @@ let db: Database | null = null;
 
 export async function getDb(): Promise<Database> {
   if (db) {
+    console.log('[getDb] Returning existing database connection')
     return db;
   }
 
-  const dbPath = path.join(process.cwd(), 'inbox-agents', 'mailmind.db');
+  const cwd = process.cwd()
+  const dbPath = path.join(cwd, 'inbox-agents', 'mailmind.db');
 
-  db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
+  console.log('[getDb] ========== DATABASE CONNECTION ==========')
+  console.log('[getDb] Current working directory:', cwd)
+  console.log('[getDb] Database path:', dbPath)
+  console.log('[getDb] Opening database connection...')
+
+  try {
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database
+    });
+    console.log('[getDb] Database connection opened successfully')
+    console.log('[getDb] Database object:', !!db)
+    console.log('[getDb] ===========================================')
+  } catch (error: any) {
+    console.error('[getDb] !!!! FAILED TO OPEN DATABASE !!!!')
+    console.error('[getDb] Error:', error)
+    console.error('[getDb] ===========================================')
+    throw error
+  }
 
   return db;
 }

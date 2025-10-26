@@ -42,3 +42,4 @@ next-env.d.ts
 inbox-agents/token.json
 inbox-agents/credentials.json
 *.db
+inbox-agents/mailmind.db
