@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Toast, { ToastProps } from '@/components/Toast';
+import ChatBot from '@/components/ChatBot';
 
 interface Filter {
   id: string;
@@ -315,7 +316,7 @@ export default function Dashboard() {
     return groups;
   };
 
-  const visibleTodos = todos.filter(t => !hiddenTodoIds.has(t));
+  const visibleTodos = todos.filter(t => !hiddenTodoIds.has(t.id));
   const groupedTodos = groupTodos(visibleTodos);
   const hasOverdue = groupedTodos.overdue.length > 0;
 
@@ -807,6 +808,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* AI ChatBot */}
+      <ChatBot />
     </div>
   );
 }
