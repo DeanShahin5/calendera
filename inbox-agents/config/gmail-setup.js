@@ -3,8 +3,11 @@ const path = require('path');
 const { google } = require('googleapis');
 const { authenticate } = require('@google-cloud/local-auth');
 
-// Gmail API scopes
-const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+// Gmail API scopes - includes Calendar for event checking
+const SCOPES = [
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/calendar.readonly'
+];
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
