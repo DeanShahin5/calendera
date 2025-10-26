@@ -2,14 +2,19 @@
 
 ## What You Need to Provide
 
-### 1. Beeper Credentials
-Add these to the `.env` file in the project root:
+### 1. Beeper Desktop Setup
+
+**IMPORTANT**: Beeper requires BOTH the access token AND Beeper Desktop running!
+
+**Prerequisites**:
+1. Install Beeper Desktop app
+2. Log in to Beeper Desktop with your account
+3. **KEEP Beeper Desktop running** (must be open while beeper-index.js runs)
+4. Add your BEEPER_ACCESS_TOKEN to .env file (already done: 69768ebc-dd97-476a-bc14-d5dfa705eef4)
+
+**Optional Configuration** (add to `.env` if needed):
 
 ```bash
-# Beeper Authentication
-BEEPER_USERNAME=your-beeper-username-or-email
-BEEPER_PASSWORD=your-beeper-password-or-access-token
-
 # Optional: Platforms to monitor (leave empty for all)
 BEEPER_PLATFORMS=imessage,whatsapp,telegram,signal,slack
 
@@ -20,11 +25,12 @@ BEEPER_CHECK_INTERVAL=5
 BEEPER_MESSAGES_PER_CHECK=50
 ```
 
-**Question**: Does Beeper Desktop provide:
-- Username/password credentials? OR
-- An access token?
+**Authentication**:
+- ✅ OAuth handled automatically by Beeper Desktop
+- ❌ NO username/password needed
+- ❌ NO API tokens needed
 
-The current code expects `BEEPER_USERNAME` and `BEEPER_PASSWORD` - confirm if this is correct or if we need to modify the authentication flow.
+Just make sure Beeper Desktop is logged in and running!
 
 ---
 
@@ -94,8 +100,10 @@ cd inbox-agents
 npm install @modelcontextprotocol/sdk
 ```
 
-### Step 2: Add Credentials
-Add `BEEPER_USERNAME` and `BEEPER_PASSWORD` to `.env` file
+### Step 2: Ensure Beeper Desktop is Running
+- Open Beeper Desktop app
+- Make sure you're logged in
+- Keep it running in the background
 
 ### Step 3: Start Beeper Agent
 ```bash
