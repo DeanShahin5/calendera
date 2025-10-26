@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -39,7 +44,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sensitive files - OAuth credentials and tokens
 inbox-agents/token.json
 inbox-agents/credentials.json
+credentials.json
+token.json
+
+# Databases - contain personal email/message data
 *.db
+inbox-agents/*.db
 inbox-agents/mailmind.db
+inbox-agents/beeper-messages.db
+test-mailmind.db
+beeper-messages.db
+mailmind.db
