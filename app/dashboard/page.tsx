@@ -1329,7 +1329,7 @@ export default function Dashboard() {
                       const emoji = platformEmoji[platform.toLowerCase()] || '📧';
 
                       return (
-                        <div key={platform} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] flex flex-col">
+                        <div key={platform} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[220px] max-h-[260px] flex flex-col">
                           {/* Platform Header - Clickable */}
                           <button
                             onClick={() => toggleBeeperPlatform(platform)}
