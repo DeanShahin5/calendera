@@ -525,19 +525,19 @@ export default function Dashboard() {
 
     return (
       <div
-        className={`bg-background border border-border/50 rounded-2xl p-5 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 ${
+        className={`bg-background border border-border/50 rounded-2xl p-4 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] ${
           todo.completed ? 'opacity-60' : ''
         } ${isOverdue && !todo.completed ? 'border-l-4' : ''}`}
         style={isOverdue && !todo.completed ? { borderLeftColor: 'var(--google-red)' } : {}}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 h-full">
           <button
             onClick={() => handleCompleteTodo(todo.id)}
             disabled={isLoading}
-            className="mt-1 flex-shrink-0"
+            className="mt-0.5 flex-shrink-0"
           >
             <div className="relative">
-              <div className={`w-6 h-6 rounded-full border-2 transition-all ${
+              <div className={`w-5 h-5 rounded-full border-2 transition-all ${
                 todo.completed
                   ? 'bg-foreground border-foreground'
                   : 'border-border hover:border-foreground/40'
@@ -551,7 +551,7 @@ export default function Dashboard() {
               </div>
               {todo.completed === 1 && !isLoading && (
                 <svg
-                  className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
+                  className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -562,22 +562,22 @@ export default function Dashboard() {
             </div>
           </button>
 
-          <div className="flex-1 min-w-0">
-            <p className={`text-base text-foreground leading-relaxed ${todo.completed ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <p className={`text-sm text-foreground leading-snug ${todo.completed ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
               <span className="text-foreground/80 font-bold">{formatCompactDate(todo.deadline || '')}:</span>{' '}
               {cleanTask}
               {estimatedTime && (
-                <span className="text-foreground/60 text-sm ml-2">({estimatedTime})</span>
+                <span className="text-foreground/60 text-xs ml-1">({estimatedTime})</span>
               )}
             </p>
             <div className="flex items-center gap-2 mt-2">
               <span
-                className="w-2.5 h-2.5 rounded-full"
+                className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ background: getPriorityColor(todo.priority) }}
               ></span>
-              <span className="text-sm text-foreground/60 capitalize font-medium">{todo.priority} priority</span>
+              <span className="text-xs text-foreground/60 capitalize font-medium">{todo.priority} priority</span>
               {isOverdue && !todo.completed && (
-                <span className="text-sm px-3 py-1 rounded-lg font-semibold" style={{ background: 'rgba(234, 67, 53, 0.15)', color: 'var(--google-red)' }}>
+                <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ background: 'rgba(234, 67, 53, 0.15)', color: 'var(--google-red)' }}>
                   Overdue
                 </span>
               )}
@@ -587,10 +587,10 @@ export default function Dashboard() {
           {todo.completed === 1 && (
             <button
               onClick={() => handleRemoveTodo(todo.id)}
-              className="flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors p-2"
+              className="flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors p-1"
               title="Remove from list"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -778,40 +778,38 @@ export default function Dashboard() {
                   Events ({events.length})
                 </h2>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {events.length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No events found</p>
                     </div>
                   ) : (
                     events.map(event => (
-                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-7 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-bold text-foreground mb-3 tracking-tight" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
-                            <div className="space-y-2 text-base text-foreground/70">
+                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-6 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 flex flex-col min-h-[380px]">
+                        <div className="flex-1 flex flex-col">
+                          <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
+                          <div className="space-y-2 text-sm text-foreground/70 flex-1">
+                            <p className="flex items-center gap-2">
+                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-xs">{formatDate(event.event_date)} {event.event_time && `at ${formatTime(event.event_time)}`}</span>
+                            </p>
+                            {event.location && (
                               <p className="flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                {formatDate(event.event_date)} {event.event_time && `at ${formatTime(event.event_time)}`}
+                                <span className="text-xs truncate">{event.location}</span>
                               </p>
-                              {event.location && (
-                                <p className="flex items-center gap-2">
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  </svg>
-                                  {event.location}
-                                </p>
-                              )}
-                              <p className="text-sm text-foreground/50 font-medium">From: {event.from_email}</p>
-                            </div>
+                            )}
+                            <p className="text-xs text-foreground/50 font-medium truncate">From: {event.from_email}</p>
                           </div>
                           <button
                             onClick={() => handleAddToCalendar(event.id)}
                             disabled={event.is_on_calendar === 1 || loadingEventId === event.id}
-                            className="px-5 py-3 bg-surface border border-white/20 rounded-xl hover:border-[rgb(66,133,244)] hover:shadow-[0_0_20px_rgba(66,133,244,0.4)] transition-all text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+                            className="mt-4 w-full px-4 py-2.5 bg-surface border border-white/20 rounded-xl hover:border-[rgb(66,133,244)] hover:shadow-[0_0_20px_rgba(66,133,244,0.4)] transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                           >
                             {loadingEventId === event.id ? (
                               <>
@@ -859,7 +857,7 @@ export default function Dashboard() {
                         <span className="w-3 h-3 rounded-full" style={{ background: 'var(--google-red)' }}></span>
                         Overdue ({groupedTodos.overdue.length})
                       </h3>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                         {groupedTodos.overdue.map(todo => (
                           <TodoItem key={todo.id} todo={todo} isOverdue={true} />
                         ))}
@@ -871,7 +869,7 @@ export default function Dashboard() {
                   {groupedTodos.today.length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>Today ({groupedTodos.today.length})</h3>
-                      <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                         {groupedTodos.today.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
                         ))}
@@ -883,7 +881,7 @@ export default function Dashboard() {
                   {groupedTodos.thisWeek.length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>This Week ({groupedTodos.thisWeek.length})</h3>
-                      <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                         {groupedTodos.thisWeek.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
                         ))}
@@ -895,7 +893,7 @@ export default function Dashboard() {
                   {groupedTodos.later.length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>Later ({groupedTodos.later.length})</h3>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                         {groupedTodos.later.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
                         ))}
@@ -920,9 +918,9 @@ export default function Dashboard() {
                   Social ({socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length})
                 </h2>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No social messages found</p>
                     </div>
                   ) : (
@@ -932,21 +930,21 @@ export default function Dashboard() {
                       return (
                         <div
                           key={message.id}
-                          className={`bg-surface border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] ${
+                          className={`bg-surface border-2 rounded-2xl p-5 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] flex flex-col min-h-[380px] ${
                             isRead
                               ? 'border-foreground/30 bg-foreground/5'
                               : 'border-border hover:border-foreground/20'
                           }`}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-3 mb-3">
                             {/* Checkbox */}
                             <button
                               onClick={() => handleCompleteSocial(message.id)}
                               disabled={isLoading}
-                              className="mt-1 flex-shrink-0"
+                              className="mt-0.5 flex-shrink-0"
                             >
                               <div className="relative">
-                                <div className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                <div className={`w-5 h-5 rounded-full border-2 transition-all ${
                                   isRead
                                     ? 'bg-foreground border-foreground'
                                     : 'border-border hover:border-foreground/40'
@@ -960,7 +958,7 @@ export default function Dashboard() {
                                 </div>
                                 {isRead && !isLoading && (
                                   <svg
-                                    className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
+                                    className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -973,37 +971,40 @@ export default function Dashboard() {
 
                             {/* Message content */}
                             <div className={`flex-1 min-w-0 ${isRead ? 'opacity-50' : ''}`}>
-                              <h3 className={`text-lg font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                              <h3 className={`text-base font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
                                 {message.subject}
                               </h3>
-                              <p className="text-base text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
-                              <p className="text-base text-foreground/80 line-clamp-2 leading-relaxed">{message.snippet}</p>
-                              <div className="mt-3 flex items-center gap-2">
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full"
-                                  style={{
-                                    background: message.urgency === 'high' ? 'var(--google-red)' :
-                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
-                                              'var(--google-green)'
-                                  }}
-                                ></span>
-                                <span className="text-sm text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
-                              </div>
                             </div>
-
-                            {/* Remove button - appears when read */}
-                            {isRead && (
-                              <button
-                                onClick={() => handleRemoveSocial(message.id)}
-                                className="flex-shrink-0 px-5 py-3 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center gap-2 font-semibold"
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Remove
-                              </button>
-                            )}
                           </div>
+
+                          <div className={`flex-1 ${isRead ? 'opacity-50' : ''}`}>
+                            <p className="text-xs text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
+                            <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-3">{message.snippet}</p>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{
+                                  background: message.urgency === 'high' ? 'var(--google-red)' :
+                                            message.urgency === 'medium' ? 'var(--google-yellow)' :
+                                            'var(--google-green)'
+                                }}
+                              ></span>
+                              <span className="text-xs text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
+                            </div>
+                          </div>
+
+                          {/* Remove button - appears when read */}
+                          {isRead && (
+                            <button
+                              onClick={() => handleRemoveSocial(message.id)}
+                              className="mt-3 w-full px-4 py-2 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-semibold text-sm"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Remove
+                            </button>
+                          )}
                         </div>
                       );
                     })
@@ -1020,24 +1021,24 @@ export default function Dashboard() {
                   Spam ({promotionsMessages.length})
                 </h2>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                   {promotionsMessages.length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No spam messages found</p>
                     </div>
                   ) : (
                     groupSpamBySender(promotionsMessages).map(({ sender, messages, count }) => {
                       const isExpanded = expandedSpamSenders.has(sender);
                       return (
-                        <div key={sender} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300">
+                        <div key={sender} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] flex flex-col">
                           {/* Sender Header - Clickable */}
                           <button
                             onClick={() => toggleSpamSender(sender)}
-                            className="w-full p-6 flex items-center justify-between hover:bg-foreground/5 transition-colors"
+                            className="w-full p-4 flex items-center justify-between hover:bg-foreground/5 transition-colors"
                           >
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
                               <svg
-                                className={`w-6 h-6 text-foreground/60 transition-transform ${
+                                className={`w-5 h-5 text-foreground/60 transition-transform flex-shrink-0 ${
                                   isExpanded ? 'rotate-90' : ''
                                 }`}
                                 fill="none"
@@ -1046,31 +1047,31 @@ export default function Dashboard() {
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
-                              <div className="text-left">
-                                <p className="text-lg font-bold text-foreground" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{sender}</p>
-                                <p className="text-sm text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
+                              <div className="text-left min-w-0 flex-1">
+                                <p className="text-sm font-bold text-foreground truncate" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{sender}</p>
+                                <p className="text-xs text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
                               </div>
                             </div>
-                            <div className="px-4 py-2 bg-foreground/10 rounded-full">
-                              <span className="text-sm font-bold text-foreground">{count}</span>
+                            <div className="px-3 py-1 bg-foreground/10 rounded-full flex-shrink-0 ml-2">
+                              <span className="text-xs font-bold text-foreground">{count}</span>
                             </div>
                           </button>
 
                           {/* Expanded Message List */}
                           {isExpanded && (
-                            <div className="border-t border-border/50 bg-surface/50">
-                              <ul className="p-6 space-y-4">
+                            <div className="border-t border-border/50 bg-surface/50 overflow-y-auto flex-1">
+                              <ul className="p-4 space-y-3">
                                 {messages.map(message => (
-                                  <li key={message.id} className="flex gap-4 text-base">
-                                    <span className="text-foreground/40 flex-shrink-0 text-lg">•</span>
+                                  <li key={message.id} className="flex gap-2 text-sm">
+                                    <span className="text-foreground/40 flex-shrink-0 text-sm">•</span>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-start gap-2 mb-2">
-                                        <span className="text-foreground/70 font-bold">
+                                      <div className="flex items-start gap-2 mb-1">
+                                        <span className="text-foreground/70 font-bold text-xs">
                                           {formatCompactDate(new Date(message.timestamp).toISOString())}:
                                         </span>
-                                        <span className="text-foreground line-clamp-1 font-semibold">{message.subject}</span>
+                                        <span className="text-foreground line-clamp-1 font-semibold text-xs">{message.subject}</span>
                                       </div>
-                                      <p className="text-foreground/70 line-clamp-2 text-base leading-relaxed">{message.snippet}</p>
+                                      <p className="text-foreground/70 line-clamp-1 text-xs leading-relaxed">{message.snippet}</p>
                                     </div>
                                   </li>
                                 ))}
@@ -1093,9 +1094,9 @@ export default function Dashboard() {
                   Recruitment ({recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length})
                 </h2>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No recruitment opportunities found</p>
                     </div>
                   ) : (
@@ -1105,21 +1106,21 @@ export default function Dashboard() {
                       return (
                         <div
                           key={message.id}
-                          className={`bg-surface border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] ${
+                          className={`bg-surface border-2 rounded-2xl p-5 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] flex flex-col min-h-[380px] ${
                             isRead
                               ? 'border-foreground/30 bg-foreground/5'
                               : 'border-border hover:border-foreground/20'
                           }`}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-3 mb-3">
                             {/* Checkbox */}
                             <button
                               onClick={() => handleCompleteRecruitment(message.id)}
                               disabled={isLoading}
-                              className="mt-1 flex-shrink-0"
+                              className="mt-0.5 flex-shrink-0"
                             >
                               <div className="relative">
-                                <div className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                <div className={`w-5 h-5 rounded-full border-2 transition-all ${
                                   isRead
                                     ? 'bg-foreground border-foreground'
                                     : 'border-border hover:border-foreground/40'
@@ -1133,7 +1134,7 @@ export default function Dashboard() {
                                 </div>
                                 {isRead && !isLoading && (
                                   <svg
-                                    className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
+                                    className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -1146,37 +1147,40 @@ export default function Dashboard() {
 
                             {/* Message content */}
                             <div className={`flex-1 min-w-0 ${isRead ? 'opacity-50' : ''}`}>
-                              <h3 className={`text-lg font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                              <h3 className={`text-base font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
                                 {message.subject}
                               </h3>
-                              <p className="text-base text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
-                              <p className="text-base text-foreground/80 line-clamp-2 leading-relaxed">{message.snippet}</p>
-                              <div className="mt-3 flex items-center gap-2">
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full"
-                                  style={{
-                                    background: message.urgency === 'high' ? 'var(--google-red)' :
-                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
-                                              'var(--google-green)'
-                                  }}
-                                ></span>
-                                <span className="text-sm text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
-                              </div>
                             </div>
-
-                            {/* Remove button - appears when read */}
-                            {isRead && (
-                              <button
-                                onClick={() => handleRemoveRecruitment(message.id)}
-                                className="flex-shrink-0 px-5 py-3 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center gap-2 font-semibold"
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Remove
-                              </button>
-                            )}
                           </div>
+
+                          <div className={`flex-1 ${isRead ? 'opacity-50' : ''}`}>
+                            <p className="text-xs text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
+                            <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-3">{message.snippet}</p>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{
+                                  background: message.urgency === 'high' ? 'var(--google-red)' :
+                                            message.urgency === 'medium' ? 'var(--google-yellow)' :
+                                            'var(--google-green)'
+                                }}
+                              ></span>
+                              <span className="text-xs text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
+                            </div>
+                          </div>
+
+                          {/* Remove button - appears when read */}
+                          {isRead && (
+                            <button
+                              onClick={() => handleRemoveRecruitment(message.id)}
+                              className="mt-3 w-full px-4 py-2 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-semibold text-sm"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Remove
+                            </button>
+                          )}
                         </div>
                       );
                     })
