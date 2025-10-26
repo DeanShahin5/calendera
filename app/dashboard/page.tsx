@@ -61,13 +61,12 @@ export default function Dashboard() {
   const [hiddenSocialIds, setHiddenSocialIds] = useState<Set<string>>(new Set());
   const [hiddenRecruitmentIds, setHiddenRecruitmentIds] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(true);
-  const [expandedSpamSenders, setExpandedSpamSenders] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
 
   const [events, setEvents] = useState<Event[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [socialMessages, setSocialMessages] = useState<Message[]>([]);
-  const [promotionsMessages, setPromotionsMessages] = useState<Message[]>([]);
   const [recruitmentMessages, setRecruitmentMessages] = useState<Message[]>([]);
 
   // Cursor trail effect - only on background
@@ -120,8 +119,7 @@ export default function Dashboard() {
     { id: 'events', label: 'Events', enabled: false },
     { id: 'tasks', label: 'Tasks', enabled: false },
     { id: 'social', label: 'Social', enabled: false },
-    { id: 'promotions', label: 'Spam', enabled: false },
-    { id: 'recruitment', label: 'Recruitment', enabled: false },
+    { id: 'recruitment', label: 'Professional', enabled: false },
   ]);
 
   useEffect(() => {
@@ -151,7 +149,6 @@ export default function Dashboard() {
         fetchEvents(),
         fetchTodos(),
         fetchSocialMessages(),
-        fetchPromotionsMessages(),
         fetchRecruitmentMessages()
       ]);
     } catch (error) {
@@ -184,14 +181,6 @@ export default function Dashboard() {
     const data = await res.json();
     if (data.success) {
       setSocialMessages(data.messages);
-    }
-  };
-
-  const fetchPromotionsMessages = async () => {
-    const res = await fetch('/api/promotions');
-    const data = await res.json();
-    if (data.success) {
-      setPromotionsMessages(data.messages);
     }
   };
 
@@ -373,18 +362,6 @@ export default function Dashboard() {
     showToast('Message hidden', 'info');
   };
 
-  const toggleSpamSender = (sender: string) => {
-    setExpandedSpamSenders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sender)) {
-        newSet.delete(sender);
-      } else {
-        newSet.add(sender);
-      }
-      return newSet;
-    });
-  };
-
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
       const newSet = new Set(prev);
@@ -397,20 +374,16 @@ export default function Dashboard() {
     });
   };
 
-  const groupSpamBySender = (messages: Message[]) => {
-    const groups = new Map<string, Message[]>();
-    messages.forEach(msg => {
-      const sender = msg.from_email;
-      if (!groups.has(sender)) groups.set(sender, []);
-      groups.get(sender)!.push(msg);
+  const toggleTask = (taskId: number) => {
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
     });
-    return Array.from(groups.entries())
-      .map(([sender, msgs]) => ({
-        sender,
-        messages: msgs,
-        count: msgs.length
-      }))
-      .sort((a, b) => b.count - a.count); // Sort by count, most messages first
   };
 
   const handleLogout = () => {
@@ -535,15 +508,18 @@ export default function Dashboard() {
   const TodoItem = ({ todo, isOverdue }: { todo: Todo; isOverdue?: boolean }) => {
     const { cleanTask, estimatedTime } = extractEstimatedTime(todo.task);
     const isLoading = loadingTodoId === todo.id;
+    const isExpanded = expandedTasks.has(todo.id);
+    const taskLength = cleanTask.length;
+    const needsToggle = taskLength > 80;
 
     return (
       <div
-        className={`bg-background border border-border/50 rounded-2xl p-4 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] ${
+        className={`bg-background border border-border/50 rounded-2xl p-5 hover:border-foreground/20 hover:shadow-[0_30px_20px_-15px_rgba(255,255,255,0.2),0_5px_10px_-5px_rgba(255,255,255,0.1)] transition-all duration-300 flex flex-col ${
           todo.completed ? 'opacity-60' : ''
-        } ${isOverdue && !todo.completed ? 'border-l-4' : ''}`}
+        } ${isOverdue && !todo.completed ? 'border-l-4' : ''} ${isExpanded ? 'h-auto' : 'h-[200px]'}`}
         style={isOverdue && !todo.completed ? { borderLeftColor: 'var(--google-red)' } : {}}
       >
-        <div className="flex items-start gap-3 h-full">
+        <div className="flex items-start gap-3 mb-3">
           <button
             onClick={() => handleCompleteTodo(todo.id)}
             disabled={isLoading}
@@ -575,32 +551,10 @@ export default function Dashboard() {
             </div>
           </button>
 
-          <div className="flex-1 min-w-0 flex flex-col justify-between">
-            <p className={`text-sm text-foreground leading-snug ${todo.completed ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
-              <span className="text-foreground/80 font-bold">{formatCompactDate(todo.deadline || '')}:</span>{' '}
-              {cleanTask}
-              {estimatedTime && (
-                <span className="text-foreground/60 text-xs ml-1">({estimatedTime})</span>
-              )}
-            </p>
-            <div className="flex items-center gap-2 mt-2">
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: getPriorityColor(todo.priority) }}
-              ></span>
-              <span className="text-xs text-foreground/60 capitalize font-medium">{todo.priority} priority</span>
-              {isOverdue && !todo.completed && (
-                <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ background: 'rgba(234, 67, 53, 0.15)', color: 'var(--google-red)' }}>
-                  Overdue
-                </span>
-              )}
-            </div>
-          </div>
-
           {todo.completed === 1 && (
             <button
               onClick={() => handleRemoveTodo(todo.id)}
-              className="flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors p-1"
+              className="flex-shrink-0 ml-auto text-foreground/40 hover:text-foreground/80 transition-colors p-1"
               title="Remove from list"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -608,6 +562,38 @@ export default function Dashboard() {
               </svg>
             </button>
           )}
+        </div>
+
+        <div className="flex-1 min-w-0 flex flex-col">
+          <p className={`text-sm text-foreground leading-relaxed mb-3 ${todo.completed ? 'line-through' : ''} ${!isExpanded && needsToggle ? 'line-clamp-3' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+            <span className="text-foreground/80 font-bold">{formatCompactDate(todo.deadline || '')}:</span>{' '}
+            {cleanTask}
+            {estimatedTime && (
+              <span className="text-foreground/60 text-xs ml-1">({estimatedTime})</span>
+            )}
+          </p>
+
+          {needsToggle && (
+            <button
+              onClick={() => toggleTask(todo.id)}
+              className="text-xs text-foreground/60 hover:text-foreground transition-colors self-start mb-2 font-semibold"
+            >
+              {isExpanded ? 'Read Less' : 'Read More'}
+            </button>
+          )}
+
+          <div className="flex items-center gap-2 mt-auto">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: getPriorityColor(todo.priority) }}
+            ></span>
+            <span className="text-xs text-foreground/60 capitalize font-medium">{todo.priority} priority</span>
+            {isOverdue && !todo.completed && (
+              <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ background: 'rgba(234, 67, 53, 0.15)', color: 'var(--google-red)' }}>
+                Overdue
+              </span>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1079,97 +1065,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Spam */}
-            {shouldShowCategory('promotions') && (
-              <div className="animate-stagger-2">
-                <button
-                  onClick={() => toggleSection('spam')}
-                  className="w-full text-left mb-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(234,67,53)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(234,67,53,0.6)]"></div>
-                  <h2 className="text-4xl font-bold text-foreground flex-1">
-                    {promotionsMessages.length} Spam
-                  </h2>
-                  <svg
-                    className={`w-8 h-8 text-foreground transition-transform duration-300 ${
-                      expandedSections.has('spam') ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {expandedSections.has('spam') && (
-                  <div className="grid grid-cols-3 gap-x-5 gap-y-4">
-                  {promotionsMessages.length === 0 ? (
-                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-lg">No spam messages found</p>
-                    </div>
-                  ) : (
-                    groupSpamBySender(promotionsMessages).map(({ sender, messages, count }) => {
-                      const isExpanded = expandedSpamSenders.has(sender);
-                      return (
-                        <div key={sender} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] flex flex-col">
-                          {/* Sender Header - Clickable */}
-                          <button
-                            onClick={() => toggleSpamSender(sender)}
-                            className="w-full p-4 flex items-center justify-between hover:bg-foreground/5 transition-colors"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <svg
-                                className={`w-5 h-5 text-foreground/60 transition-transform flex-shrink-0 ${
-                                  isExpanded ? 'rotate-90' : ''
-                                }`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                              <div className="text-left min-w-0 flex-1">
-                                <p className="text-sm font-bold text-foreground truncate" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{sender}</p>
-                                <p className="text-xs text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
-                              </div>
-                            </div>
-                            <div className="px-3 py-1 bg-foreground/10 rounded-full flex-shrink-0 ml-2">
-                              <span className="text-xs font-bold text-foreground">{count}</span>
-                            </div>
-                          </button>
-
-                          {/* Expanded Message List */}
-                          {isExpanded && (
-                            <div className="border-t border-border/50 bg-surface/50 overflow-y-auto flex-1">
-                              <ul className="p-4 space-y-3">
-                                {messages.map(message => (
-                                  <li key={message.id} className="flex gap-2 text-sm">
-                                    <span className="text-foreground/40 flex-shrink-0 text-sm">•</span>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start gap-2 mb-1">
-                                        <span className="text-foreground/70 font-bold text-xs">
-                                          {formatCompactDate(new Date(message.timestamp).toISOString())}:
-                                        </span>
-                                        <span className="text-foreground line-clamp-1 font-semibold text-xs">{message.subject}</span>
-                                      </div>
-                                      <p className="text-foreground/70 line-clamp-1 text-xs leading-relaxed">{message.snippet}</p>
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Recruitment */}
+            {/* Professional */}
             {shouldShowCategory('recruitment') && (
               <div className="animate-stagger-2">
                 <button
@@ -1178,7 +1074,7 @@ export default function Dashboard() {
                 >
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
                   <h2 className="text-4xl font-bold text-foreground flex-1">
-                    {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length} Recruitment
+                    {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length} Professional
                   </h2>
                   <svg
                     className={`w-8 h-8 text-foreground transition-transform duration-300 ${
@@ -1196,7 +1092,7 @@ export default function Dashboard() {
                   <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-lg">No recruitment opportunities found</p>
+                      <p className="text-foreground/40 text-lg">No professional opportunities found</p>
                     </div>
                   ) : (
                     recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).map(message => {
@@ -1291,7 +1187,7 @@ export default function Dashboard() {
           </div>
 
           {/* Empty state when filters show no categories */}
-          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('promotions') && !shouldShowCategory('recruitment') && (
+          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('recruitment') && (
             <div className="text-center py-16">
               <p className="text-foreground/40 text-lg">No categories match your filters</p>
             </div>
