@@ -66,9 +66,18 @@ export async function POST(request: Request) {
 
       // Create calendar event
       const startDateTime = `${event.event_date}T${event.event_time || '09:00'}:00`;
-      const endDateTime = `${event.event_date}T${event.event_time ?
-        (parseInt(event.event_time.split(':')[0]) + 1).toString().padStart(2, '0') + ':' + event.event_time.split(':')[1]
-        : '10:00'}:00`;
+
+      // Use end_time from database if available, otherwise calculate by adding 1 hour
+      let endDateTime;
+      if (event.end_time) {
+        endDateTime = `${event.event_date}T${event.end_time}:00`;
+      } else {
+        // Fallback: add 1 hour to start time
+        const startTime = event.event_time || '09:00';
+        const endHour = (parseInt(startTime.split(':')[0]) + 1).toString().padStart(2, '0');
+        const endMinute = startTime.split(':')[1];
+        endDateTime = `${event.event_date}T${endHour}:${endMinute}:00`;
+      }
 
       const calendarEvent = {
         summary: event.title,
