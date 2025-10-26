@@ -142,6 +142,33 @@ const tools: Anthropic.Tool[] = [
         }
       }
     }
+  },
+  {
+    name: 'query_beeper_messages',
+    description: 'Query SMS/iMessage and other messaging platforms (WhatsApp, Telegram, Signal, etc) from Beeper. Can filter by platform, category, or search by sender.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        platform: {
+          type: 'string',
+          description: 'Filter by messaging platform',
+          enum: ['imessage', 'whatsapp', 'telegram', 'signal', 'slack', 'discord', 'sms', 'instagram', 'messenger']
+        },
+        category: {
+          type: 'string',
+          description: 'Message category to filter by',
+          enum: ['EVENT', 'TODO', 'SOCIAL', 'SPAM', 'RECRUITMENT', 'FINANCIAL', 'URGENT', 'INFORMATIONAL']
+        },
+        sender_search: {
+          type: 'string',
+          description: 'Search for messages from a specific sender (partial match on name or contact)'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of messages to return (default 20)'
+        }
+      }
+    }
   }
 ]
 
@@ -540,6 +567,99 @@ async function executeDeleteEvent(args: any) {
   }
 }
 
+async function executeQueryBeeperMessages(args: any) {
+  console.log('\n[executeQueryBeeperMessages] ========== START ==========')
+  try {
+    const { platform, category, sender_search, limit = 20 } = args
+
+    console.log('[executeQueryBeeperMessages] Args:', JSON.stringify(args, null, 2))
+
+    // Try to connect to Beeper database
+    const sqlite3 = await import('sqlite3')
+    const { open } = await import('sqlite')
+    const path = await import('path')
+
+    const dbPath = path.join(process.cwd(), 'inbox-agents', 'beeper-messages.db')
+    console.log('[executeQueryBeeperMessages] Database path:', dbPath)
+
+    // Check if Beeper database exists
+    const fs = await import('fs')
+    if (!fs.existsSync(dbPath)) {
+      console.log('[executeQueryBeeperMessages] Beeper database not found')
+      return {
+        success: false,
+        message: 'Beeper database not initialized. Run beeper-index.js to start collecting messages.',
+        messages: []
+      }
+    }
+
+    const beeperDb = await open({
+      filename: dbPath,
+      driver: sqlite3.default.Database
+    })
+
+    // Build query
+    let query = `
+      SELECT
+        m.*,
+        pm.category,
+        pm.urgency
+      FROM beeper_messages m
+      LEFT JOIN beeper_processed_messages pm ON m.id = pm.message_id
+      WHERE 1=1
+    `
+    const params: any[] = []
+
+    if (platform) {
+      query += ' AND LOWER(m.platform) = LOWER(?)'
+      params.push(platform)
+    }
+
+    if (category) {
+      query += ' AND pm.category = ?'
+      params.push(category)
+    }
+
+    if (sender_search) {
+      query += ' AND (m.from_name LIKE ? OR m.from_contact LIKE ?)'
+      params.push(`%${sender_search}%`, `%${sender_search}%`)
+    }
+
+    query += ' ORDER BY m.timestamp DESC LIMIT ?'
+    params.push(limit)
+
+    console.log('[executeQueryBeeperMessages] Query:', query)
+    console.log('[executeQueryBeeperMessages] Params:', params)
+
+    const messages = await beeperDb.all(query, params)
+    console.log('[executeQueryBeeperMessages] Found messages:', messages.length)
+    console.log('[executeQueryBeeperMessages] ========== SUCCESS ==========\n')
+
+    await beeperDb.close()
+
+    return {
+      success: true,
+      count: messages.length,
+      messages: messages.map((m: any) => ({
+        id: m.id,
+        platform: m.platform,
+        from: m.from_name || m.from_contact,
+        body: m.body,
+        snippet: m.snippet,
+        date: m.date,
+        category: m.category,
+        urgency: m.urgency,
+        is_group: m.is_group_message
+      }))
+    }
+  } catch (error: any) {
+    console.error('[executeQueryBeeperMessages] !!!! FUNCTION ERROR !!!!')
+    console.error('[executeQueryBeeperMessages] Error:', error)
+    console.error('[executeQueryBeeperMessages] ========== FAILED ==========\n')
+    throw new Error(`Failed to query Beeper messages: ${error.message}`)
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -572,7 +692,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // System prompt
-    const systemPrompt = `You are MailMind, an AI assistant with access to the user's email, calendar, and task data.
+    const systemPrompt = `You are MailMind, an AI assistant with access to the user's email, calendar, task data, and SMS/iMessage from Beeper.
 
 You can query the SQLite database to answer questions and perform actions using the provided tools.
 
@@ -580,6 +700,7 @@ Available tools:
 - query_events: Query calendar events from the database
 - query_todos: Query tasks/todos from the database
 - query_messages: Query emails by category (SOCIAL, RECRUITMENT, EVENT, TASK, OTHER)
+- query_beeper_messages: Query SMS/iMessage and messaging platforms (iMessage, WhatsApp, Telegram, Signal, Slack, Discord, etc) by platform or category
 - create_calendar_event: Create ONE calendar event via Google Calendar API
 - complete_task: Mark tasks as completed
 - delete_calendar_event: Delete calendar events from database and Google Calendar (search by id, title, or date)
@@ -675,6 +796,9 @@ When you create an event or complete a task, structure your response to indicate
               type: 'event_deleted',
               deleted_count: toolResult.deleted_count || 0
             }
+            break
+          case 'query_beeper_messages':
+            toolResult = await executeQueryBeeperMessages(toolUse.input)
             break
           default:
             console.log('[POST /api/chat] Unknown tool:', toolUse.name)

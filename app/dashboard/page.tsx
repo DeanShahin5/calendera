@@ -44,6 +44,21 @@ interface Message {
   read?: number;
 }
 
+interface BeeperMessage {
+  id: string;
+  platform: string;
+  from_name: string;
+  from_contact: string;
+  body: string;
+  snippet: string;
+  date: string;
+  timestamp: number;
+  category: string;
+  urgency: string;
+  room_name: string;
+  is_group_message: boolean;
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [userName, setUserName] = useState('User');
@@ -68,6 +83,7 @@ export default function Dashboard() {
   const [socialMessages, setSocialMessages] = useState<Message[]>([]);
   const [promotionsMessages, setPromotionsMessages] = useState<Message[]>([]);
   const [recruitmentMessages, setRecruitmentMessages] = useState<Message[]>([]);
+  const [beeperMessages, setBeeperMessages] = useState<BeeperMessage[]>([]);
 
   // Cursor trail effect - only on background
   useEffect(() => {
@@ -121,6 +137,7 @@ export default function Dashboard() {
     { id: 'social', label: 'Social', enabled: false },
     { id: 'promotions', label: 'Spam', enabled: false },
     { id: 'recruitment', label: 'Recruitment', enabled: false },
+    { id: 'messages', label: 'SMS/iMessage', enabled: false },
   ]);
 
   useEffect(() => {
@@ -151,7 +168,8 @@ export default function Dashboard() {
         fetchTodos(),
         fetchSocialMessages(),
         fetchPromotionsMessages(),
-        fetchRecruitmentMessages()
+        fetchRecruitmentMessages(),
+        fetchBeeperMessages()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -199,6 +217,14 @@ export default function Dashboard() {
     const data = await res.json();
     if (data.success) {
       setRecruitmentMessages(data.messages);
+    }
+  };
+
+  const fetchBeeperMessages = async () => {
+    const res = await fetch('/api/beeper-messages');
+    const data = await res.json();
+    if (data.success) {
+      setBeeperMessages(data.messages);
     }
   };
 
@@ -1188,10 +1214,78 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* Beeper Messages (SMS/iMessage) */}
+            {shouldShowCategory('messages') && (
+              <div className="animate-stagger-2">
+                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
+                  {beeperMessages.length} SMS/iMessage(s)
+                </h2>
+
+                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+                  {beeperMessages.length === 0 ? (
+                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                      <p className="text-foreground/40 text-lg">No messages found. Run beeper-index.js to start collecting SMS/iMessage data.</p>
+                    </div>
+                  ) : (
+                    beeperMessages.map(message => {
+                      const platformEmoji = {
+                        'imessage': '💬',
+                        'whatsapp': '💚',
+                        'telegram': '✈️',
+                        'signal': '🔵',
+                        'slack': '💼',
+                        'discord': '🎮',
+                        'sms': '📱',
+                        'instagram': '📷',
+                        'messenger': '💌'
+                      }[message.platform.toLowerCase()] || '📧';
+
+                      return (
+                        <div
+                          key={message.id}
+                          className="bg-surface border-2 border-border rounded-2xl p-5 transition-all duration-300 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] flex flex-col min-h-[200px] max-h-[200px]"
+                        >
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">{platformEmoji}</span>
+                                <h3 className="text-base font-bold text-foreground truncate" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                                  {message.from_name || message.from_contact}
+                                </h3>
+                              </div>
+                              <p className="text-xs text-foreground/60 font-medium capitalize mb-1">{message.platform}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex-1 overflow-hidden">
+                            <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-3">{message.snippet || message.body}</p>
+                            {message.category && (
+                              <div className="flex items-center gap-2 mt-auto">
+                                <span
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{
+                                    background: message.urgency === 'high' ? 'var(--google-red)' :
+                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
+                                              'var(--google-green)'
+                                  }}
+                                ></span>
+                                <span className="text-xs text-foreground/60 capitalize font-medium">{message.category}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Empty state when filters show no categories */}
-          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('promotions') && !shouldShowCategory('recruitment') && (
+          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('promotions') && !shouldShowCategory('recruitment') && !shouldShowCategory('messages') && (
             <div className="text-center py-16">
               <p className="text-foreground/40 text-lg">No categories match your filters</p>
             </div>
