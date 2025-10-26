@@ -41,6 +41,7 @@ interface Message {
   category: string;
   urgency: string;
   timestamp: number;
+  read?: number;
 }
 
 export default function Dashboard() {
@@ -54,18 +55,71 @@ export default function Dashboard() {
   const [toast, setToast] = useState<Omit<ToastProps, 'onClose'> | null>(null);
   const [loadingEventId, setLoadingEventId] = useState<number | null>(null);
   const [loadingTodoId, setLoadingTodoId] = useState<number | null>(null);
+  const [loadingSocialId, setLoadingSocialId] = useState<string | null>(null);
+  const [loadingRecruitmentId, setLoadingRecruitmentId] = useState<string | null>(null);
   const [hiddenTodoIds, setHiddenTodoIds] = useState<Set<number>>(new Set());
+  const [hiddenSocialIds, setHiddenSocialIds] = useState<Set<string>>(new Set());
+  const [hiddenRecruitmentIds, setHiddenRecruitmentIds] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(true);
+  const [expandedSpamSenders, setExpandedSpamSenders] = useState<Set<string>>(new Set());
 
   const [events, setEvents] = useState<Event[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [socialMessages, setSocialMessages] = useState<Message[]>([]);
+  const [promotionsMessages, setPromotionsMessages] = useState<Message[]>([]);
   const [recruitmentMessages, setRecruitmentMessages] = useState<Message[]>([]);
+
+  // Cursor trail effect - only on background
+  useEffect(() => {
+    const colors = [
+      'rgba(66, 133, 244, 0.6)',
+      'rgba(234, 67, 53, 0.6)',
+      'rgba(251, 188, 5, 0.6)',
+      'rgba(52, 168, 83, 0.6)',
+    ];
+
+    let colorIndex = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Check if mouse is over the main content box
+      const mainContent = document.querySelector('.main-content-box');
+      if (mainContent) {
+        const rect = mainContent.getBoundingClientRect();
+        const isOverContent = e.clientX >= rect.left &&
+                             e.clientX <= rect.right &&
+                             e.clientY >= rect.top &&
+                             e.clientY <= rect.bottom;
+
+        // Only create trail if NOT over main content
+        if (!isOverContent) {
+          const trail = document.createElement('div');
+          trail.className = 'cursor-trail';
+          trail.style.left = e.pageX + 'px';
+          trail.style.top = e.pageY + 'px';
+          trail.style.background = colors[colorIndex];
+          colorIndex = (colorIndex + 1) % colors.length;
+
+          document.body.appendChild(trail);
+
+          setTimeout(() => {
+            trail.remove();
+          }, 1000);
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 
   const [filters, setFilters] = useState<Filter[]>([
     { id: 'events', label: 'Events', enabled: false },
     { id: 'tasks', label: 'Tasks', enabled: false },
     { id: 'social', label: 'Social', enabled: false },
+    { id: 'promotions', label: 'Spam', enabled: false },
     { id: 'recruitment', label: 'Recruitment', enabled: false },
   ]);
 
@@ -96,6 +150,7 @@ export default function Dashboard() {
         fetchEvents(),
         fetchTodos(),
         fetchSocialMessages(),
+        fetchPromotionsMessages(),
         fetchRecruitmentMessages()
       ]);
     } catch (error) {
@@ -128,6 +183,14 @@ export default function Dashboard() {
     const data = await res.json();
     if (data.success) {
       setSocialMessages(data.messages);
+    }
+  };
+
+  const fetchPromotionsMessages = async () => {
+    const res = await fetch('/api/promotions');
+    const data = await res.json();
+    if (data.success) {
+      setPromotionsMessages(data.messages);
     }
   };
 
@@ -176,33 +239,39 @@ export default function Dashboard() {
   const handleCompleteTodo = async (todoId: number) => {
     setLoadingTodoId(todoId);
 
-    // Optimistic UI update
+    // Find current completion status
+    const currentTodo = todos.find(t => t.id === todoId);
+    const newCompletedStatus = currentTodo?.completed === 1 ? 0 : 1;
+
+    // Optimistic UI update - toggle completion
     setTodos(prev => prev.map(t =>
-      t.id === todoId ? { ...t, completed: 1 } : t
+      t.id === todoId ? { ...t, completed: newCompletedStatus } : t
     ));
 
     try {
       const res = await fetch(`/api/todos/${todoId}/complete`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: newCompletedStatus })
       });
       const data = await res.json();
 
       if (data.success) {
-        showToast('Task completed!', 'success');
-        // Refresh to get the completed_at timestamp
+        showToast(newCompletedStatus === 1 ? 'Task completed!' : 'Task marked as incomplete', 'success');
+        // Refresh to get the updated timestamp
         await fetchTodos();
       } else {
         // Revert on failure
         setTodos(prev => prev.map(t =>
-          t.id === todoId ? { ...t, completed: 0 } : t
+          t.id === todoId ? { ...t, completed: currentTodo?.completed || 0 } : t
         ));
-        showToast('Failed to mark task as complete', 'error');
+        showToast('Failed to update task', 'error');
       }
     } catch (error) {
-      console.error('Error completing todo:', error);
+      console.error('Error updating todo:', error);
       // Revert on error
       setTodos(prev => prev.map(t =>
-        t.id === todoId ? { ...t, completed: 0 } : t
+        t.id === todoId ? { ...t, completed: currentTodo?.completed || 0 } : t
       ));
       showToast('Network error. Please try again.', 'error');
     } finally {
@@ -213,6 +282,122 @@ export default function Dashboard() {
   const handleRemoveTodo = (todoId: number) => {
     setHiddenTodoIds(prev => new Set([...prev, todoId]));
     showToast('Task hidden', 'info');
+  };
+
+  const handleCompleteSocial = async (messageId: string) => {
+    setLoadingSocialId(messageId);
+
+    const currentMessage = socialMessages.find(m => m.id === messageId);
+    const newReadStatus = currentMessage?.read === 1 ? 0 : 1;
+
+    // Optimistic UI update
+    setSocialMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, read: newReadStatus } : m
+    ));
+
+    try {
+      const res = await fetch(`/api/social/${messageId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: newReadStatus })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast(newReadStatus === 1 ? 'Message marked as read' : 'Message marked as unread', 'success');
+        await fetchSocialMessages();
+      } else {
+        setSocialMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, read: currentMessage?.read || 0 } : m
+        ));
+        showToast('Failed to update message', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating social message:', error);
+      setSocialMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, read: currentMessage?.read || 0 } : m
+      ));
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setLoadingSocialId(null);
+    }
+  };
+
+  const handleRemoveSocial = (messageId: string) => {
+    setHiddenSocialIds(prev => new Set([...prev, messageId]));
+    showToast('Message hidden', 'info');
+  };
+
+  const handleCompleteRecruitment = async (messageId: string) => {
+    setLoadingRecruitmentId(messageId);
+
+    const currentMessage = recruitmentMessages.find(m => m.id === messageId);
+    const newReadStatus = currentMessage?.read === 1 ? 0 : 1;
+
+    // Optimistic UI update
+    setRecruitmentMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, read: newReadStatus } : m
+    ));
+
+    try {
+      const res = await fetch(`/api/recruitment/${messageId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: newReadStatus })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast(newReadStatus === 1 ? 'Message marked as read' : 'Message marked as unread', 'success');
+        await fetchRecruitmentMessages();
+      } else {
+        setRecruitmentMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, read: currentMessage?.read || 0 } : m
+        ));
+        showToast('Failed to update message', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating recruitment message:', error);
+      setRecruitmentMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, read: currentMessage?.read || 0 } : m
+      ));
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setLoadingRecruitmentId(null);
+    }
+  };
+
+  const handleRemoveRecruitment = (messageId: string) => {
+    setHiddenRecruitmentIds(prev => new Set([...prev, messageId]));
+    showToast('Message hidden', 'info');
+  };
+
+  const toggleSpamSender = (sender: string) => {
+    setExpandedSpamSenders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sender)) {
+        newSet.delete(sender);
+      } else {
+        newSet.add(sender);
+      }
+      return newSet;
+    });
+  };
+
+  const groupSpamBySender = (messages: Message[]) => {
+    const groups = new Map<string, Message[]>();
+    messages.forEach(msg => {
+      const sender = msg.from_email;
+      if (!groups.has(sender)) groups.set(sender, []);
+      groups.get(sender)!.push(msg);
+    });
+    return Array.from(groups.entries())
+      .map(([sender, msgs]) => ({
+        sender,
+        messages: msgs,
+        count: msgs.length
+      }))
+      .sort((a, b) => b.count - a.count); // Sort by count, most messages first
   };
 
   const handleLogout = () => {
@@ -340,19 +525,19 @@ export default function Dashboard() {
 
     return (
       <div
-        className={`bg-background border border-border/50 rounded-xl p-4 hover:border-foreground/20 transition-all ${
+        className={`bg-background border border-border/50 rounded-2xl p-5 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 ${
           todo.completed ? 'opacity-60' : ''
         } ${isOverdue && !todo.completed ? 'border-l-4' : ''}`}
         style={isOverdue && !todo.completed ? { borderLeftColor: 'var(--google-red)' } : {}}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <button
             onClick={() => handleCompleteTodo(todo.id)}
-            disabled={todo.completed === 1 || isLoading}
-            className="mt-0.5 flex-shrink-0"
+            disabled={isLoading}
+            className="mt-1 flex-shrink-0"
           >
             <div className="relative">
-              <div className={`w-5 h-5 rounded border-2 transition-all ${
+              <div className={`w-6 h-6 rounded-full border-2 transition-all ${
                 todo.completed
                   ? 'bg-foreground border-foreground'
                   : 'border-border hover:border-foreground/40'
@@ -366,7 +551,7 @@ export default function Dashboard() {
               </div>
               {todo.completed === 1 && !isLoading && (
                 <svg
-                  className="absolute top-0 left-0 w-5 h-5 text-background pointer-events-none"
+                  className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -378,21 +563,21 @@ export default function Dashboard() {
           </button>
 
           <div className="flex-1 min-w-0">
-            <p className={`text-foreground font-medium ${todo.completed ? 'line-through' : ''}`}>
-              <span className="text-foreground/80">{formatCompactDate(todo.deadline || '')}:</span>{' '}
+            <p className={`text-base text-foreground leading-relaxed ${todo.completed ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+              <span className="text-foreground/80 font-bold">{formatCompactDate(todo.deadline || '')}:</span>{' '}
               {cleanTask}
               {estimatedTime && (
                 <span className="text-foreground/60 text-sm ml-2">({estimatedTime})</span>
               )}
             </p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-2">
               <span
-                className="w-2 h-2 rounded-full"
+                className="w-2.5 h-2.5 rounded-full"
                 style={{ background: getPriorityColor(todo.priority) }}
               ></span>
-              <span className="text-xs text-foreground/60 capitalize">{todo.priority} priority</span>
+              <span className="text-sm text-foreground/60 capitalize font-medium">{todo.priority} priority</span>
               {isOverdue && !todo.completed && (
-                <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'rgba(234, 67, 53, 0.1)', color: 'var(--google-red)' }}>
+                <span className="text-sm px-3 py-1 rounded-lg font-semibold" style={{ background: 'rgba(234, 67, 53, 0.15)', color: 'var(--google-red)' }}>
                   Overdue
                 </span>
               )}
@@ -402,10 +587,10 @@ export default function Dashboard() {
           {todo.completed === 1 && (
             <button
               onClick={() => handleRemoveTodo(todo.id)}
-              className="flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors p-1"
+              className="flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors p-2"
               title="Remove from list"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -420,6 +605,24 @@ export default function Dashboard() {
       {/* Grid pattern background */}
       <div className="absolute inset-0 bg-grid-pattern opacity-40"></div>
 
+      {/* Evenly distributed color overlay - large blended gradients */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Large overlapping color fields for smooth blending */}
+        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-br from-[rgb(66,133,244)]/8 via-transparent to-transparent blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-full h-1/2 bg-gradient-to-bl from-[rgb(234,67,53)]/8 via-transparent to-transparent blur-3xl"></div>
+        <div className="absolute top-1/4 left-0 w-2/3 h-2/3 bg-gradient-to-r from-[rgb(251,188,5)]/8 via-transparent to-transparent blur-3xl"></div>
+        <div className="absolute top-1/4 right-0 w-2/3 h-2/3 bg-gradient-to-l from-[rgb(52,168,83)]/8 via-transparent to-transparent blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-tr from-[rgb(52,168,83)]/8 via-transparent to-transparent blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-full h-1/2 bg-gradient-to-tl from-[rgb(66,133,244)]/8 via-transparent to-transparent blur-3xl"></div>
+
+        {/* Subtle moving blobs for animation */}
+        <div className="absolute top-10 left-10 w-96 h-96 bg-gradient-to-br from-[rgb(66,133,244)]/10 to-transparent rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute top-20 right-20 w-80 h-80 bg-gradient-to-br from-[rgb(234,67,53)]/10 to-transparent rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-1/4 w-88 h-88 bg-gradient-to-br from-[rgb(251,188,5)]/10 to-transparent rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+        <div className="absolute bottom-10 right-1/3 w-76 h-76 bg-gradient-to-br from-[rgb(52,168,83)]/10 to-transparent rounded-full blur-3xl animate-blob animation-delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-[rgb(66,133,244)]/10 to-transparent rounded-full blur-3xl animate-blob animation-delay-3000"></div>
+      </div>
+
       {/* Toast notification */}
       {toast && (
         <Toast
@@ -431,16 +634,16 @@ export default function Dashboard() {
 
       {/* Main content container */}
       <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="bg-black border-4 border-surface rounded-2xl p-10 shadow-2xl animate-bounce-in">
+        <div className="main-content-box bg-black border-2 border-white/40 rounded-3xl p-10 shadow-[0_20px_60px_-15px_rgba(66,133,244,0.3),0_10px_30px_-10px_rgba(234,67,53,0.2),0_5px_15px_-5px_rgba(251,188,5,0.2)] animate-bounce-in">
 
           {/* Header section with welcome and filters */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8 pb-8 border-b border-border/50">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10 pb-8 border-b border-white/10">
             {/* Welcome message */}
             <div>
-              <h1 style={{fontFamily: 'var(--font-serif)'}} className="text-4xl md:text-5xl text-foreground mb-2">
+              <h1 style={{fontFamily: 'var(--font-serif)'}} className="text-4xl md:text-5xl text-foreground mb-3">
                 Welcome, {userName}!
               </h1>
-              <p className="text-foreground/60">Here's your organized inbox</p>
+              <p className="text-foreground/80 text-xl font-medium">Here's your organized inbox</p>
             </div>
 
             {/* Filter dropdown, Refresh, and Account */}
@@ -449,7 +652,7 @@ export default function Dashboard() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="px-4 py-3 bg-surface border-2 border-border rounded-xl hover:border-foreground/20 transition-all duration-200 disabled:opacity-50"
+                className="px-4 py-3 bg-surface border border-white/20 rounded-xl hover:border-[rgb(66,133,244)] hover:shadow-[0_0_20px_rgba(66,133,244,0.4)] transition-all duration-200 disabled:opacity-50"
                 title="Refresh"
               >
                 <svg
@@ -466,7 +669,7 @@ export default function Dashboard() {
               <div className="relative z-50">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="flex items-center gap-3 px-5 py-3 bg-surface border-2 border-border rounded-xl hover:border-foreground/20 transition-all duration-200 min-w-[200px] justify-between"
+                  className="flex items-center gap-3 px-5 py-3 bg-surface border border-white/20 rounded-xl hover:border-[rgb(251,188,5)] hover:shadow-[0_0_20px_rgba(251,188,5,0.4)] transition-all duration-200 min-w-[200px] justify-between"
                 >
                   <div className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-foreground/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -527,7 +730,7 @@ export default function Dashboard() {
               <div className="relative z-50">
                 <button
                   onClick={() => setShowAccountMenu(!showAccountMenu)}
-                  className="w-12 h-12 rounded-full bg-surface border-2 border-border hover:border-foreground/20 flex items-center justify-center text-foreground font-semibold text-lg transition-all duration-200"
+                  className="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(66,133,244)] via-[rgb(251,188,5)] to-[rgb(234,67,53)] border-2 border-white/40 hover:shadow-[0_0_30px_rgba(66,133,244,0.8),0_0_60px_rgba(234,67,53,0.4)] hover:scale-110 flex items-center justify-center text-white font-bold text-xl transition-all duration-300"
                 >
                   {userName.charAt(0)}
                 </button>
@@ -570,23 +773,23 @@ export default function Dashboard() {
             {/* Events */}
             {shouldShowCategory('events') && (
               <div className="animate-stagger-2">
-                <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-                  <div className="w-1 h-8 rounded-full" style={{ background: 'var(--google-blue)' }}></div>
+                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(66,133,244)] to-[rgb(52,168,83)] shadow-[0_0_15px_rgba(66,133,244,0.6)]"></div>
                   Events ({events.length})
                 </h2>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {events.length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-sm">No events found</p>
+                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                      <p className="text-foreground/40 text-lg">No events found</p>
                     </div>
                   ) : (
                     events.map(event => (
-                      <div key={event.id} className="bg-background border border-border/50 rounded-xl p-6 hover:border-foreground/20 transition-all">
+                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-7 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-foreground mb-2">{event.title}</h3>
-                            <div className="space-y-1 text-sm text-foreground/60">
+                            <h3 className="text-xl font-bold text-foreground mb-3 tracking-tight" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
+                            <div className="space-y-2 text-base text-foreground/70">
                               <p className="flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -602,13 +805,13 @@ export default function Dashboard() {
                                   {event.location}
                                 </p>
                               )}
-                              <p className="text-xs text-foreground/40">From: {event.from_email}</p>
+                              <p className="text-sm text-foreground/50 font-medium">From: {event.from_email}</p>
                             </div>
                           </div>
                           <button
                             onClick={() => handleAddToCalendar(event.id)}
                             disabled={event.is_on_calendar === 1 || loadingEventId === event.id}
-                            className="px-4 py-2 bg-surface border-2 border-border rounded-lg hover:border-foreground/20 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+                            className="px-5 py-3 bg-surface border border-white/20 rounded-xl hover:border-[rgb(66,133,244)] hover:shadow-[0_0_20px_rgba(66,133,244,0.4)] transition-all text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                           >
                             {loadingEventId === event.id ? (
                               <>
@@ -635,14 +838,14 @@ export default function Dashboard() {
             {/* Tasks with Grouping */}
             {shouldShowCategory('tasks') && (
               <div className="animate-stagger-2">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-semibold text-foreground flex items-center gap-3">
-                    <div className="w-1 h-8 rounded-full" style={{ background: 'var(--google-green)' }}></div>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-4xl font-bold text-foreground flex items-center gap-4">
+                    <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
                     Tasks ({todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length})
                   </h2>
                   <button
                     onClick={() => setShowCompleted(!showCompleted)}
-                    className="text-sm text-foreground/60 hover:text-foreground transition-colors"
+                    className="text-lg font-semibold text-foreground/60 hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-foreground/5"
                   >
                     {showCompleted ? 'Hide' : 'Show'} completed
                   </button>
@@ -652,8 +855,8 @@ export default function Dashboard() {
                   {/* Overdue */}
                   {hasOverdue && (
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground/80 mb-2 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ background: 'var(--google-red)' }}></span>
+                      <h3 className="text-lg font-bold text-foreground/90 mb-3 flex items-center gap-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                        <span className="w-3 h-3 rounded-full" style={{ background: 'var(--google-red)' }}></span>
                         Overdue ({groupedTodos.overdue.length})
                       </h3>
                       <div className="space-y-2">
@@ -667,8 +870,8 @@ export default function Dashboard() {
                   {/* Today */}
                   {groupedTodos.today.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground/80 mb-2">Today ({groupedTodos.today.length})</h3>
-                      <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>Today ({groupedTodos.today.length})</h3>
+                      <div className="space-y-3">
                         {groupedTodos.today.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
                         ))}
@@ -679,8 +882,8 @@ export default function Dashboard() {
                   {/* This Week */}
                   {groupedTodos.thisWeek.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground/80 mb-2">This Week ({groupedTodos.thisWeek.length})</h3>
-                      <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>This Week ({groupedTodos.thisWeek.length})</h3>
+                      <div className="space-y-3">
                         {groupedTodos.thisWeek.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
                         ))}
@@ -691,7 +894,7 @@ export default function Dashboard() {
                   {/* Later */}
                   {groupedTodos.later.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground/80 mb-2">Later ({groupedTodos.later.length})</h3>
+                      <h3 className="text-lg font-bold text-foreground/90 mb-3" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>Later ({groupedTodos.later.length})</h3>
                       <div className="space-y-2">
                         {groupedTodos.later.map(todo => (
                           <TodoItem key={todo.id} todo={todo} />
@@ -712,43 +915,171 @@ export default function Dashboard() {
             {/* Social */}
             {shouldShowCategory('social') && (
               <div className="animate-stagger-2">
-                <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-                  <div className="w-1 h-8 rounded-full" style={{ background: 'var(--google-yellow)' }}></div>
-                  Social ({socialMessages.length})
+                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(234,67,53)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
+                  Social ({socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length})
                 </h2>
 
-                <div className="space-y-3">
-                  {socialMessages.length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-sm">No social messages found</p>
+                <div className="space-y-4">
+                  {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length === 0 ? (
+                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                      <p className="text-foreground/40 text-lg">No social messages found</p>
                     </div>
                   ) : (
-                    socialMessages.slice(0, 10).map(message => (
-                      <div key={message.id} className="bg-background border border-border/50 rounded-xl p-6 hover:border-foreground/20 transition-all">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-foreground mb-1">{message.subject}</h3>
-                            <p className="text-sm text-foreground/60 mb-2">From: {message.from_email}</p>
-                            <p className="text-sm text-foreground/80 line-clamp-2">{message.snippet}</p>
-                            <div className="mt-2 flex items-center gap-2">
-                              <span
-                                className="text-xs px-2 py-1 rounded"
-                                style={{
-                                  background: message.urgency === 'high' ? 'rgba(234, 67, 53, 0.1)' :
-                                             message.urgency === 'medium' ? 'rgba(251, 188, 5, 0.1)' :
-                                             'rgba(52, 168, 83, 0.1)',
-                                  color: message.urgency === 'high' ? 'var(--google-red)' :
-                                        message.urgency === 'medium' ? 'var(--google-yellow)' :
-                                        'var(--google-green)'
-                                }}
-                              >
-                                {message.urgency} urgency
-                              </span>
+                    socialMessages.filter(m => !hiddenSocialIds.has(m.id)).map(message => {
+                      const isRead = message.read === 1;
+                      const isLoading = loadingSocialId === message.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`bg-surface border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] ${
+                            isRead
+                              ? 'border-foreground/30 bg-foreground/5'
+                              : 'border-border hover:border-foreground/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            {/* Checkbox */}
+                            <button
+                              onClick={() => handleCompleteSocial(message.id)}
+                              disabled={isLoading}
+                              className="mt-1 flex-shrink-0"
+                            >
+                              <div className="relative">
+                                <div className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                  isRead
+                                    ? 'bg-foreground border-foreground'
+                                    : 'border-border hover:border-foreground/40'
+                                }`}>
+                                  {isLoading && (
+                                    <svg className="animate-spin w-full h-full text-background" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
+                                </div>
+                                {isRead && !isLoading && (
+                                  <svg
+                                    className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            </button>
+
+                            {/* Message content */}
+                            <div className={`flex-1 min-w-0 ${isRead ? 'opacity-50' : ''}`}>
+                              <h3 className={`text-lg font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                                {message.subject}
+                              </h3>
+                              <p className="text-base text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
+                              <p className="text-base text-foreground/80 line-clamp-2 leading-relaxed">{message.snippet}</p>
+                              <div className="mt-3 flex items-center gap-2">
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{
+                                    background: message.urgency === 'high' ? 'var(--google-red)' :
+                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
+                                              'var(--google-green)'
+                                  }}
+                                ></span>
+                                <span className="text-sm text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
+                              </div>
                             </div>
+
+                            {/* Remove button - appears when read */}
+                            {isRead && (
+                              <button
+                                onClick={() => handleRemoveSocial(message.id)}
+                                className="flex-shrink-0 px-5 py-3 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center gap-2 font-semibold"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Remove
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Spam */}
+            {shouldShowCategory('promotions') && (
+              <div className="animate-stagger-2">
+                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(234,67,53)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(234,67,53,0.6)]"></div>
+                  Spam ({promotionsMessages.length})
+                </h2>
+
+                <div className="space-y-4">
+                  {promotionsMessages.length === 0 ? (
+                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                      <p className="text-foreground/40 text-lg">No spam messages found</p>
+                    </div>
+                  ) : (
+                    groupSpamBySender(promotionsMessages).map(({ sender, messages, count }) => {
+                      const isExpanded = expandedSpamSenders.has(sender);
+                      return (
+                        <div key={sender} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300">
+                          {/* Sender Header - Clickable */}
+                          <button
+                            onClick={() => toggleSpamSender(sender)}
+                            className="w-full p-6 flex items-center justify-between hover:bg-foreground/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <svg
+                                className={`w-6 h-6 text-foreground/60 transition-transform ${
+                                  isExpanded ? 'rotate-90' : ''
+                                }`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              <div className="text-left">
+                                <p className="text-lg font-bold text-foreground" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{sender}</p>
+                                <p className="text-sm text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
+                              </div>
+                            </div>
+                            <div className="px-4 py-2 bg-foreground/10 rounded-full">
+                              <span className="text-sm font-bold text-foreground">{count}</span>
+                            </div>
+                          </button>
+
+                          {/* Expanded Message List */}
+                          {isExpanded && (
+                            <div className="border-t border-border/50 bg-surface/50">
+                              <ul className="p-6 space-y-4">
+                                {messages.map(message => (
+                                  <li key={message.id} className="flex gap-4 text-base">
+                                    <span className="text-foreground/40 flex-shrink-0 text-lg">•</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start gap-2 mb-2">
+                                        <span className="text-foreground/70 font-bold">
+                                          {formatCompactDate(new Date(message.timestamp).toISOString())}:
+                                        </span>
+                                        <span className="text-foreground line-clamp-1 font-semibold">{message.subject}</span>
+                                      </div>
+                                      <p className="text-foreground/70 line-clamp-2 text-base leading-relaxed">{message.snippet}</p>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -757,43 +1088,98 @@ export default function Dashboard() {
             {/* Recruitment */}
             {shouldShowCategory('recruitment') && (
               <div className="animate-stagger-2">
-                <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-3">
-                  <div className="w-1 h-8 rounded-full" style={{ background: 'var(--google-blue)' }}></div>
-                  Recruitment ({recruitmentMessages.length})
+                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
+                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
+                  Recruitment ({recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length})
                 </h2>
 
-                <div className="space-y-3">
-                  {recruitmentMessages.length === 0 ? (
-                    <div className="bg-background border border-border/50 rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-sm">No recruitment opportunities found</p>
+                <div className="space-y-4">
+                  {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length === 0 ? (
+                    <div className="bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
+                      <p className="text-foreground/40 text-lg">No recruitment opportunities found</p>
                     </div>
                   ) : (
-                    recruitmentMessages.slice(0, 10).map(message => (
-                      <div key={message.id} className="bg-background border border-border/50 rounded-xl p-6 hover:border-foreground/20 transition-all">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-foreground mb-1">{message.subject}</h3>
-                            <p className="text-sm text-foreground/60 mb-2">From: {message.from_email}</p>
-                            <p className="text-sm text-foreground/80 line-clamp-2">{message.snippet}</p>
-                            <div className="mt-2 flex items-center gap-2">
-                              <span
-                                className="text-xs px-2 py-1 rounded"
-                                style={{
-                                  background: message.urgency === 'high' ? 'rgba(234, 67, 53, 0.1)' :
-                                             message.urgency === 'medium' ? 'rgba(251, 188, 5, 0.1)' :
-                                             'rgba(52, 168, 83, 0.1)',
-                                  color: message.urgency === 'high' ? 'var(--google-red)' :
-                                        message.urgency === 'medium' ? 'var(--google-yellow)' :
-                                        'var(--google-green)'
-                                }}
-                              >
-                                {message.urgency} urgency
-                              </span>
+                    recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).map(message => {
+                      const isRead = message.read === 1;
+                      const isLoading = loadingRecruitmentId === message.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`bg-surface border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] ${
+                            isRead
+                              ? 'border-foreground/30 bg-foreground/5'
+                              : 'border-border hover:border-foreground/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            {/* Checkbox */}
+                            <button
+                              onClick={() => handleCompleteRecruitment(message.id)}
+                              disabled={isLoading}
+                              className="mt-1 flex-shrink-0"
+                            >
+                              <div className="relative">
+                                <div className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                  isRead
+                                    ? 'bg-foreground border-foreground'
+                                    : 'border-border hover:border-foreground/40'
+                                }`}>
+                                  {isLoading && (
+                                    <svg className="animate-spin w-full h-full text-background" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
+                                </div>
+                                {isRead && !isLoading && (
+                                  <svg
+                                    className="absolute top-0 left-0 w-6 h-6 text-background pointer-events-none"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            </button>
+
+                            {/* Message content */}
+                            <div className={`flex-1 min-w-0 ${isRead ? 'opacity-50' : ''}`}>
+                              <h3 className={`text-lg font-bold text-foreground mb-2 ${isRead ? 'line-through' : ''}`} style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                                {message.subject}
+                              </h3>
+                              <p className="text-base text-foreground/70 mb-2 font-medium">From: {message.from_email}</p>
+                              <p className="text-base text-foreground/80 line-clamp-2 leading-relaxed">{message.snippet}</p>
+                              <div className="mt-3 flex items-center gap-2">
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full"
+                                  style={{
+                                    background: message.urgency === 'high' ? 'var(--google-red)' :
+                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
+                                              'var(--google-green)'
+                                  }}
+                                ></span>
+                                <span className="text-sm text-foreground/60 capitalize font-medium">{message.urgency} urgency</span>
+                              </div>
                             </div>
+
+                            {/* Remove button - appears when read */}
+                            {isRead && (
+                              <button
+                                onClick={() => handleRemoveRecruitment(message.id)}
+                                className="flex-shrink-0 px-5 py-3 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-xl transition-all duration-200 flex items-center gap-2 font-semibold"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Remove
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -801,7 +1187,7 @@ export default function Dashboard() {
           </div>
 
           {/* Empty state when filters show no categories */}
-          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('recruitment') && (
+          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('promotions') && !shouldShowCategory('recruitment') && (
             <div className="text-center py-16">
               <p className="text-foreground/40 text-lg">No categories match your filters</p>
             </div>
