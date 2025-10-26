@@ -775,7 +775,7 @@ export default function Dashboard() {
               <div className="animate-stagger-2">
                 <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(66,133,244)] to-[rgb(52,168,83)] shadow-[0_0_15px_rgba(66,133,244,0.6)]"></div>
-                  Events ({events.length})
+                  {events.length} Event(s)
                 </h2>
 
                 <div className="space-y-4">
@@ -841,7 +841,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-4xl font-bold text-foreground flex items-center gap-4">
                     <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                    Tasks ({todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length})
+                    {todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length} Task(s)
                   </h2>
                   <button
                     onClick={() => setShowCompleted(!showCompleted)}
@@ -917,7 +917,7 @@ export default function Dashboard() {
               <div className="animate-stagger-2">
                 <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(234,67,53)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
-                  Social ({socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length})
+                  {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length} Social(s)
                 </h2>
 
                 <div className="space-y-4">
@@ -1017,7 +1017,7 @@ export default function Dashboard() {
               <div className="animate-stagger-2">
                 <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(234,67,53)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(234,67,53,0.6)]"></div>
-                  Spam ({promotionsMessages.length})
+                  {promotionsMessages.length} Spam(s)
                 </h2>
 
                 <div className="space-y-4">
@@ -1090,7 +1090,7 @@ export default function Dashboard() {
               <div className="animate-stagger-2">
                 <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
                   <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                  Recruitment ({recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length})
+                  {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length} Recruitment(s)
                 </h2>
 
                 <div className="space-y-4">
