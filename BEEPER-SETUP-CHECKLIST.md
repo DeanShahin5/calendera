@@ -4,12 +4,13 @@
 
 ### 1. Beeper Desktop Setup
 
-**IMPORTANT**: Beeper uses OAuth authentication via Beeper Desktop - **NO credentials needed in .env!**
+**IMPORTANT**: Beeper requires BOTH the access token AND Beeper Desktop running!
 
 **Prerequisites**:
 1. Install Beeper Desktop app
 2. Log in to Beeper Desktop with your account
-3. Make sure Beeper Desktop is running
+3. **KEEP Beeper Desktop running** (must be open while beeper-index.js runs)
+4. Add your BEEPER_ACCESS_TOKEN to .env file (already done: 69768ebc-dd97-476a-bc14-d5dfa705eef4)
 
 **Optional Configuration** (add to `.env` if needed):
 

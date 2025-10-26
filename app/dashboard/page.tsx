@@ -79,8 +79,8 @@ export default function Dashboard() {
   const [expandedSpamSenders, setExpandedSpamSenders] = useState<Set<string>>(new Set());
   const [expandedBeeperPlatforms, setExpandedBeeperPlatforms] = useState<Set<string>>(new Set());
 
-  // Collapsible section states
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['events', 'tasks', 'social', 'promotions', 'recruitment', 'messages']));
+  // Collapsible section states - all sections start collapsed
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const [events, setEvents] = useState<Event[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -260,6 +260,30 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error adding to calendar:', error);
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setLoadingEventId(null);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: number) => {
+    setLoadingEventId(eventId);
+    try {
+      const res = await fetch('/api/calendar/delete-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        await fetchEvents();
+        showToast('Event deleted successfully!', 'success');
+      } else {
+        showToast(data.error || 'Failed to delete event', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
       showToast('Network error. Please try again.', 'error');
     } finally {
       setLoadingEventId(null);
@@ -869,9 +893,20 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     events.map(event => (
-                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-6 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 flex flex-col min-h-[380px]">
+                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-6 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 flex flex-col min-h-[380px] relative">
+                        {/* Delete button in top-right corner */}
+                        <button
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="absolute top-3 right-3 text-foreground/30 hover:text-red-500 transition-colors p-1"
+                          title="Delete event"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+
                         <div className="flex-1 flex flex-col">
-                          <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
+                          <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight pr-6" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
                           <div className="space-y-2 text-sm text-foreground/70 flex-1">
                             <p className="flex items-center gap-2">
                               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1327,24 +1362,24 @@ export default function Dashboard() {
                           {/* Expanded Message List */}
                           {isExpanded && (
                             <div className="border-t border-border/50 bg-surface/50 overflow-y-auto flex-1">
-                              <ul className="p-4 space-y-3">
+                              <ul className="p-6 space-y-5">
                                 {messages.map(message => (
-                                  <li key={message.id} className="flex gap-2 text-sm">
-                                    <span className="text-foreground/40 flex-shrink-0 text-sm">•</span>
+                                  <li key={message.id} className="flex gap-3 text-sm">
+                                    <span className="text-foreground/40 flex-shrink-0 text-base">•</span>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-start gap-2 mb-1">
-                                        <span className="text-foreground/70 font-bold text-xs">
+                                      <div className="flex items-start gap-2 mb-2">
+                                        <span className="text-foreground/70 font-bold text-sm">
                                           {new Date(message.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:
                                         </span>
-                                        <span className="text-foreground line-clamp-1 font-semibold text-xs">
+                                        <span className="text-foreground line-clamp-1 font-bold text-lg">
                                           {message.from_name || message.from_contact}
                                         </span>
                                       </div>
-                                      <p className="text-foreground/70 line-clamp-2 text-xs leading-relaxed mb-1">
+                                      <p className="text-foreground/90 line-clamp-3 text-base leading-relaxed mb-2">
                                         {message.snippet || message.body}
                                       </p>
                                       {message.category && (
-                                        <span className="inline-block px-2 py-0.5 bg-foreground/10 rounded text-xs font-medium text-foreground/80 capitalize">
+                                        <span className="inline-block px-2 py-1 bg-foreground/10 rounded text-sm font-medium text-foreground/80 capitalize">
                                           {message.category}
                                         </span>
                                       )}

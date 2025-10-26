@@ -17,11 +17,21 @@ class BeeperMCPClient {
     try {
       logger.info('Connecting to Beeper Desktop MCP server...');
 
+      // Get access token from environment
+      const accessToken = process.env.BEEPER_ACCESS_TOKEN;
+      if (!accessToken) {
+        throw new Error('BEEPER_ACCESS_TOKEN not found in environment variables');
+      }
+
       // Create transport - connects to Beeper Desktop MCP via stdio
-      // OAuth is handled automatically by Beeper Desktop
+      // Access token is passed via environment variable
       this.transport = new StdioClientTransport({
         command: 'npx',
-        args: ['-y', '@beeper/desktop-mcp']
+        args: ['-y', '@beeper/desktop-mcp'],
+        env: {
+          ...process.env,
+          BEEPER_ACCESS_TOKEN: accessToken
+        }
       });
 
       // Create MCP client
@@ -39,17 +49,17 @@ class BeeperMCPClient {
       this.connected = true;
 
       logger.info('Successfully connected to Beeper Desktop MCP server');
-      logger.info('OAuth authentication handled by Beeper Desktop');
+      logger.info('Using access token for authentication');
       return true;
     } catch (error) {
       logger.error('Failed to connect to Beeper Desktop MCP', { error: error.message });
-      logger.error('Make sure Beeper Desktop is running and you are logged in');
+      logger.error('Make sure BEEPER_ACCESS_TOKEN is set in .env file');
       throw error;
     }
   }
 
   /**
-   * Get all available chats/conversations using list_chats tool
+   * Get all available chats/conversations using search_chats tool
    */
   async getRooms() {
     if (!this.connected) {
@@ -57,13 +67,21 @@ class BeeperMCPClient {
     }
 
     try {
+      // Use search_chats with a query that matches all
       const result = await this.client.callTool({
-        name: 'list_chats',
-        arguments: {}
+        name: 'search_chats',
+        arguments: {
+          query: '',
+          limit: 100
+        }
       });
 
-      // Parse the result
-      const chats = result.content?.[0]?.text ? JSON.parse(result.content[0].text) : [];
+      // Parse the result - check different response formats
+      let chats = [];
+      if (result.content?.[0]?.text) {
+        const parsed = JSON.parse(result.content[0].text);
+        chats = Array.isArray(parsed) ? parsed : (parsed.chats || parsed.results || []);
+      }
 
       logger.debug(`Found ${chats.length} chats`);
       return chats;
@@ -74,7 +92,7 @@ class BeeperMCPClient {
   }
 
   /**
-   * Get messages from a specific chat using get_chat_messages tool
+   * Get messages from a specific chat using list_messages tool
    */
   async getRoomMessages(chatId, limit = 50) {
     if (!this.connected) {
@@ -83,15 +101,19 @@ class BeeperMCPClient {
 
     try {
       const result = await this.client.callTool({
-        name: 'get_chat_messages',
+        name: 'list_messages',
         arguments: {
           chat_id: chatId,
           limit: limit
         }
       });
 
-      // Parse the result
-      const messages = result.content?.[0]?.text ? JSON.parse(result.content[0].text) : [];
+      // Parse the result - handle different response formats
+      let messages = [];
+      if (result.content?.[0]?.text) {
+        const parsed = JSON.parse(result.content[0].text);
+        messages = Array.isArray(parsed) ? parsed : (parsed.messages || parsed.results || []);
+      }
 
       return this.parseMessages(messages);
     } catch (error) {
@@ -101,7 +123,7 @@ class BeeperMCPClient {
   }
 
   /**
-   * Get recent messages across all platforms
+   * Get recent messages across all platforms using the unified 'search' tool
    */
   async getRecentMessages(limit = 20) {
     if (!this.connected) {
@@ -109,18 +131,26 @@ class BeeperMCPClient {
     }
 
     try {
-      const chats = await this.getRooms();
-      const allMessages = [];
+      // Use the 'search' tool which gets chats AND messages in one call
+      // Empty query returns all recent activity
+      const result = await this.client.callTool({
+        name: 'search',
+        arguments: {
+          query: ''  // Empty query for all recent activity
+        }
+      });
 
-      for (const chat of chats) {
-        try {
-          const chatId = chat.id || chat.chat_id;
-          const messages = await this.getRoomMessages(chatId, Math.min(limit, 10));
-          allMessages.push(...messages);
-        } catch (error) {
-          logger.warn(`Failed to get messages from chat ${chat.name || chat.id}`, {
-            error: error.message
-          });
+      // Parse the result
+      let allMessages = [];
+      if (result.content?.[0]?.text) {
+        const parsed = JSON.parse(result.content[0].text);
+
+        // The search tool returns both chats and messages
+        // Extract messages from the response
+        if (parsed.messages && Array.isArray(parsed.messages)) {
+          allMessages = this.parseMessages(parsed.messages);
+        } else if (Array.isArray(parsed)) {
+          allMessages = this.parseMessages(parsed);
         }
       }
 
@@ -130,9 +160,14 @@ class BeeperMCPClient {
       // Limit to requested number
       const limitedMessages = allMessages.slice(0, limit);
 
-      logger.info(`Fetched ${limitedMessages.length} total messages from ${chats.length} chats`);
+      logger.info(`Fetched ${limitedMessages.length} recent messages`);
       return limitedMessages;
     } catch (error) {
+      // Provide helpful error message if Beeper Desktop is not running
+      if (error.message && error.message.includes('404')) {
+        logger.error('Beeper Desktop is not running or not accessible');
+        logger.error('Please make sure Beeper Desktop is open and logged in');
+      }
       logger.error('Error getting recent messages', { error: error.message });
       throw error;
     }
@@ -197,8 +232,12 @@ class BeeperMCPClient {
         }
       });
 
-      // Parse the result
-      const messages = result.content?.[0]?.text ? JSON.parse(result.content[0].text) : [];
+      // Parse the result - handle different response formats
+      let messages = [];
+      if (result.content?.[0]?.text) {
+        const parsed = JSON.parse(result.content[0].text);
+        messages = Array.isArray(parsed) ? parsed : (parsed.messages || parsed.results || []);
+      }
 
       logger.info(`Found ${messages.length} messages matching "${query}"`);
       return this.parseMessages(messages);
