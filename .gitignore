@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+inbox-agents/token.json
+inbox-agents/credentials.json
+*.db
