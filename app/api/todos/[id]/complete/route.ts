@@ -7,23 +7,28 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const body = await request.json();
+    const { completed } = body;
     const db = await getDb();
+
+    // Support toggling: if completed is provided, use it; otherwise default to 1
+    const completedValue = completed !== undefined ? completed : 1;
 
     await db.run(
       `UPDATE todos
-       SET completed = 1, completed_at = CURRENT_TIMESTAMP
+       SET completed = ?, completed_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [id]
+      [completedValue, id]
     );
 
     return NextResponse.json({
       success: true,
-      message: 'Todo marked as complete'
+      message: completedValue === 1 ? 'Todo marked as complete' : 'Todo marked as incomplete'
     });
   } catch (error) {
     console.error('Error completing todo:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to complete todo' },
+      { success: false, error: 'Failed to update todo' },
       { status: 500 }
     );
   }

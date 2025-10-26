@@ -77,6 +77,10 @@ export default function Dashboard() {
   const [hiddenRecruitmentIds, setHiddenRecruitmentIds] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(true);
   const [expandedSpamSenders, setExpandedSpamSenders] = useState<Set<string>>(new Set());
+  const [expandedBeeperPlatforms, setExpandedBeeperPlatforms] = useState<Set<string>>(new Set());
+
+  // Collapsible section states - all sections start collapsed
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const [events, setEvents] = useState<Event[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -262,6 +266,30 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteEvent = async (eventId: number) => {
+    setLoadingEventId(eventId);
+    try {
+      const res = await fetch('/api/calendar/delete-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        await fetchEvents();
+        showToast('Event deleted successfully!', 'success');
+      } else {
+        showToast(data.error || 'Failed to delete event', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setLoadingEventId(null);
+    }
+  };
+
   const handleCompleteTodo = async (todoId: number) => {
     setLoadingTodoId(todoId);
 
@@ -424,6 +452,46 @@ export default function Dashboard() {
         count: msgs.length
       }))
       .sort((a, b) => b.count - a.count); // Sort by count, most messages first
+  };
+
+  const toggleBeeperPlatform = (platform: string) => {
+    setExpandedBeeperPlatforms(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(platform)) {
+        newSet.delete(platform);
+      } else {
+        newSet.add(platform);
+      }
+      return newSet;
+    });
+  };
+
+  const groupBeeperByPlatform = (messages: BeeperMessage[]) => {
+    const groups = new Map<string, BeeperMessage[]>();
+    messages.forEach(msg => {
+      const platform = msg.platform;
+      if (!groups.has(platform)) groups.set(platform, []);
+      groups.get(platform)!.push(msg);
+    });
+    return Array.from(groups.entries())
+      .map(([platform, msgs]) => ({
+        platform,
+        messages: msgs,
+        count: msgs.length
+      }))
+      .sort((a, b) => b.count - a.count); // Sort by count, most messages first
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
   };
 
   const handleLogout = () => {
@@ -691,8 +759,8 @@ export default function Dashboard() {
                 </svg>
               </button>
 
-              {/* Filter dropdown */}
-              <div className="relative z-50">
+              {/* Filter dropdown - hidden in collapsible design */}
+              <div className="relative z-50 hidden">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
                   className="flex items-center gap-3 px-5 py-3 bg-surface border border-white/20 rounded-xl hover:border-[rgb(251,188,5)] hover:shadow-[0_0_20px_rgba(251,188,5,0.4)] transition-all duration-200 min-w-[200px] justify-between"
@@ -794,26 +862,51 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Category sections */}
-          <div className="space-y-8">
-            {/* Events */}
-            {shouldShowCategory('events') && (
-              <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(66,133,244)] to-[rgb(52,168,83)] shadow-[0_0_15px_rgba(66,133,244,0.6)]"></div>
-                  {events.length} Event(s)
-                </h2>
+          {/* Category sections - Collapsible Accordion */}
+          <div className="space-y-4">
+            {/* Events Section */}
+            <div className="bg-surface/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-200 hover:border-border">
+              <button
+                onClick={() => toggleSection('events')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-foreground/5 transition-colors"
+              >
+                <div className="w-1.5 h-12 rounded-full bg-gradient-to-b from-[rgb(66,133,244)] to-[rgb(52,168,83)] shadow-[0_0_10px_rgba(66,133,244,0.4)]"></div>
+                <div className="flex-1 text-left">
+                  <h2 className="text-2xl font-bold text-foreground">{events.length} Events</h2>
+                </div>
+                <svg
+                  className={`w-6 h-6 text-foreground/60 transition-transform duration-200 ${expandedSections.has('events') ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+              {expandedSections.has('events') && (
+                <div className="p-5 border-t border-border/50 bg-background/50">
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {events.length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No events found</p>
                     </div>
                   ) : (
                     events.map(event => (
-                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-6 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 flex flex-col min-h-[380px]">
+                      <div key={event.id} className="bg-background border border-border/50 rounded-2xl p-6 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 flex flex-col min-h-[380px] relative">
+                        {/* Delete button in top-right corner */}
+                        <button
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="absolute top-3 right-3 text-foreground/30 hover:text-red-500 transition-colors p-1"
+                          title="Delete event"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+
                         <div className="flex-1 flex flex-col">
-                          <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
+                          <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight pr-6" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{event.title}</h3>
                           <div className="space-y-2 text-sm text-foreground/70 flex-1">
                             <p className="flex items-center gap-2">
                               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -855,19 +948,36 @@ export default function Dashboard() {
                       </div>
                     ))
                   )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Tasks with Grouping */}
-            {shouldShowCategory('tasks') && (
-              <div className="animate-stagger-2">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-4xl font-bold text-foreground flex items-center gap-4">
-                    <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                    {todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length} Task(s)
-                  </h2>
-                  <button
+            {/* Tasks Section */}
+            <div className="bg-surface/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-200 hover:border-border">
+              <button
+                onClick={() => toggleSection('tasks')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-foreground/5 transition-colors"
+              >
+                <div className="w-1.5 h-12 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(251,188,5)] shadow-[0_0_10px_rgba(52,168,83,0.4)]"></div>
+                <div className="flex-1 text-left">
+                  <h2 className="text-2xl font-bold text-foreground">{todos.filter(t => !t.completed && !hiddenTodoIds.has(t.id)).length} Tasks</h2>
+                </div>
+                <svg
+                  className={`w-6 h-6 text-foreground/60 transition-transform duration-200 ${expandedSections.has('tasks') ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {expandedSections.has('tasks') && (
+                <div className="p-5 border-t border-border/50 bg-background/50">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-lg font-semibold text-foreground">Active Tasks</h3>
+                    <button
                     onClick={() => setShowCompleted(!showCompleted)}
                     className="text-lg font-semibold text-foreground/60 hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-foreground/5"
                   >
@@ -933,18 +1043,33 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
-            {/* Social */}
-            {shouldShowCategory('social') && (
-              <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(234,67,53)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
-                  {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length} Social(s)
-                </h2>
+            {/* Social Section */}
+            <div className="bg-surface/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-200 hover:border-border">
+              <button
+                onClick={() => toggleSection('social')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-foreground/5 transition-colors"
+              >
+                <div className="w-1.5 h-12 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(234,67,53)] shadow-[0_0_10px_rgba(251,188,5,0.4)]"></div>
+                <div className="flex-1 text-left">
+                  <h2 className="text-2xl font-bold text-foreground">{socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length} Social</h2>
+                </div>
+                <svg
+                  className={`w-6 h-6 text-foreground/60 transition-transform duration-200 ${expandedSections.has('social') ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+              {expandedSections.has('social') && (
+                <div className="p-5 border-t border-border/50 bg-background/50">
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {socialMessages.filter(m => !hiddenSocialIds.has(m.id)).length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No social messages found</p>
@@ -1035,92 +1160,34 @@ export default function Dashboard() {
                       );
                     })
                   )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Spam */}
-            {shouldShowCategory('promotions') && (
-              <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(234,67,53)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(234,67,53,0.6)]"></div>
-                  {promotionsMessages.length} Spam(s)
-                </h2>
-
-                <div className="grid grid-cols-3 gap-x-5 gap-y-4">
-                  {promotionsMessages.length === 0 ? (
-                    <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
-                      <p className="text-foreground/40 text-lg">No spam messages found</p>
-                    </div>
-                  ) : (
-                    groupSpamBySender(promotionsMessages).map(({ sender, messages, count }) => {
-                      const isExpanded = expandedSpamSenders.has(sender);
-                      return (
-                        <div key={sender} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] flex flex-col">
-                          {/* Sender Header - Clickable */}
-                          <button
-                            onClick={() => toggleSpamSender(sender)}
-                            className="w-full p-4 flex items-center justify-between hover:bg-foreground/5 transition-colors"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <svg
-                                className={`w-5 h-5 text-foreground/60 transition-transform flex-shrink-0 ${
-                                  isExpanded ? 'rotate-90' : ''
-                                }`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                              <div className="text-left min-w-0 flex-1">
-                                <p className="text-sm font-bold text-foreground truncate" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>{sender}</p>
-                                <p className="text-xs text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
-                              </div>
-                            </div>
-                            <div className="px-3 py-1 bg-foreground/10 rounded-full flex-shrink-0 ml-2">
-                              <span className="text-xs font-bold text-foreground">{count}</span>
-                            </div>
-                          </button>
-
-                          {/* Expanded Message List */}
-                          {isExpanded && (
-                            <div className="border-t border-border/50 bg-surface/50 overflow-y-auto flex-1">
-                              <ul className="p-4 space-y-3">
-                                {messages.map(message => (
-                                  <li key={message.id} className="flex gap-2 text-sm">
-                                    <span className="text-foreground/40 flex-shrink-0 text-sm">•</span>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start gap-2 mb-1">
-                                        <span className="text-foreground/70 font-bold text-xs">
-                                          {formatCompactDate(new Date(message.timestamp).toISOString())}:
-                                        </span>
-                                        <span className="text-foreground line-clamp-1 font-semibold text-xs">{message.subject}</span>
-                                      </div>
-                                      <p className="text-foreground/70 line-clamp-1 text-xs leading-relaxed">{message.snippet}</p>
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+            {/* Recruitment Section */}
+            <div className="bg-surface/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-200 hover:border-border">
+              <button
+                onClick={() => toggleSection('recruitment')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-foreground/5 transition-colors"
+              >
+                <div className="w-1.5 h-12 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_10px_rgba(52,168,83,0.4)]"></div>
+                <div className="flex-1 text-left">
+                  <h2 className="text-2xl font-bold text-foreground">{recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length} Professional</h2>
                 </div>
-              </div>
-            )}
+                <svg
+                  className={`w-6 h-6 text-foreground/60 transition-transform duration-200 ${expandedSections.has('recruitment') ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            {/* Recruitment */}
-            {shouldShowCategory('recruitment') && (
-              <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(52,168,83)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(52,168,83,0.6)]"></div>
-                  {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length} Recruitment(s)
-                </h2>
-
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+              {expandedSections.has('recruitment') && (
+                <div className="p-5 border-t border-border/50 bg-background/50">
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5">
                   {recruitmentMessages.filter(m => !hiddenRecruitmentIds.has(m.id)).length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No recruitment opportunities found</p>
@@ -1211,26 +1278,43 @@ export default function Dashboard() {
                       );
                     })
                   )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Beeper Messages (SMS/iMessage) */}
-            {shouldShowCategory('messages') && (
-              <div className="animate-stagger-2">
-                <h2 className="text-4xl font-bold text-foreground mb-5 flex items-center gap-4">
-                  <div className="w-1.5 h-10 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(66,133,244)] shadow-[0_0_15px_rgba(251,188,5,0.6)]"></div>
-                  {beeperMessages.length} SMS/iMessage(s)
-                </h2>
+            {/* SMS/iMessage (Beeper) Section */}
+            <div className="bg-surface/30 border border-border/50 rounded-xl overflow-hidden transition-all duration-200 hover:border-border">
+              <button
+                onClick={() => toggleSection('messages')}
+                className="w-full p-5 flex items-center gap-4 hover:bg-foreground/5 transition-colors"
+              >
+                <div className="w-1.5 h-12 rounded-full bg-gradient-to-b from-[rgb(251,188,5)] to-[rgb(66,133,244)] shadow-[0_0_10px_rgba(251,188,5,0.4)]"></div>
+                <div className="flex-1 text-left">
+                  <h2 className="text-2xl font-bold text-foreground">{beeperMessages.length} SMS/Messages</h2>
+                </div>
+                <svg
+                  className={`w-6 h-6 text-foreground/60 transition-transform duration-200 ${expandedSections.has('messages') ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-                <div className="grid grid-cols-3 gap-x-5 gap-y-5">
+              {expandedSections.has('messages') && (
+                <div className="p-5 border-t border-border/50 bg-background/50">
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                   {beeperMessages.length === 0 ? (
                     <div className="col-span-3 bg-background border border-border/50 rounded-2xl p-8 min-h-[140px] flex items-center justify-center">
                       <p className="text-foreground/40 text-lg">No messages found. Run beeper-index.js to start collecting SMS/iMessage data.</p>
                     </div>
                   ) : (
-                    beeperMessages.map(message => {
-                      const platformEmoji = {
+                    groupBeeperByPlatform(beeperMessages).map(({ platform, messages, count }) => {
+                      const isExpanded = expandedBeeperPlatforms.has(platform);
+
+                      const platformEmoji: Record<string, string> = {
                         'imessage': '💬',
                         'whatsapp': '💚',
                         'telegram': '✈️',
@@ -1240,56 +1324,80 @@ export default function Dashboard() {
                         'sms': '📱',
                         'instagram': '📷',
                         'messenger': '💌'
-                      }[message.platform.toLowerCase()] || '📧';
+                      };
+
+                      const emoji = platformEmoji[platform.toLowerCase()] || '📧';
 
                       return (
-                        <div
-                          key={message.id}
-                          className="bg-surface border-2 border-border rounded-2xl p-5 transition-all duration-300 hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] flex flex-col min-h-[200px] max-h-[200px]"
-                        >
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xl">{platformEmoji}</span>
-                                <h3 className="text-base font-bold text-foreground truncate" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
-                                  {message.from_name || message.from_contact}
-                                </h3>
+                        <div key={platform} className="bg-background border border-border/50 rounded-2xl overflow-hidden hover:border-foreground/20 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] transition-all duration-300 min-h-[120px] max-h-[140px] flex flex-col">
+                          {/* Platform Header - Clickable */}
+                          <button
+                            onClick={() => toggleBeeperPlatform(platform)}
+                            className="w-full p-4 flex items-center justify-between hover:bg-foreground/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <svg
+                                className={`w-5 h-5 text-foreground/60 transition-transform flex-shrink-0 ${
+                                  isExpanded ? 'rotate-90' : ''
+                                }`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              <span className="text-xl">{emoji}</span>
+                              <div className="text-left min-w-0 flex-1">
+                                <p className="text-sm font-bold text-foreground truncate capitalize" style={{fontFamily: 'system-ui, -apple-system, sans-serif'}}>
+                                  {platform}
+                                </p>
+                                <p className="text-xs text-foreground/60 font-medium">{count} message{count !== 1 ? 's' : ''}</p>
                               </div>
-                              <p className="text-xs text-foreground/60 font-medium capitalize mb-1">{message.platform}</p>
                             </div>
-                          </div>
+                            <div className="px-3 py-1 bg-foreground/10 rounded-full flex-shrink-0 ml-2">
+                              <span className="text-xs font-bold text-foreground">{count}</span>
+                            </div>
+                          </button>
 
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-3">{message.snippet || message.body}</p>
-                            {message.category && (
-                              <div className="flex items-center gap-2 mt-auto">
-                                <span
-                                  className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{
-                                    background: message.urgency === 'high' ? 'var(--google-red)' :
-                                              message.urgency === 'medium' ? 'var(--google-yellow)' :
-                                              'var(--google-green)'
-                                  }}
-                                ></span>
-                                <span className="text-xs text-foreground/60 capitalize font-medium">{message.category}</span>
-                              </div>
-                            )}
-                          </div>
+                          {/* Expanded Message List */}
+                          {isExpanded && (
+                            <div className="border-t border-border/50 bg-surface/50 overflow-y-auto flex-1">
+                              <ul className="p-6 space-y-5">
+                                {messages.map(message => (
+                                  <li key={message.id} className="flex gap-3 text-sm">
+                                    <span className="text-foreground/40 flex-shrink-0 text-base">•</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start gap-2 mb-2">
+                                        <span className="text-foreground/70 font-bold text-sm">
+                                          {new Date(message.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:
+                                        </span>
+                                        <span className="text-foreground line-clamp-1 font-bold text-lg">
+                                          {message.from_name || message.from_contact}
+                                        </span>
+                                      </div>
+                                      <p className="text-foreground/90 line-clamp-3 text-base leading-relaxed mb-2">
+                                        {message.snippet || message.body}
+                                      </p>
+                                      {message.category && (
+                                        <span className="inline-block px-2 py-1 bg-foreground/10 rounded text-sm font-medium text-foreground/80 capitalize">
+                                          {message.category}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       );
                     })
                   )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Empty state when filters show no categories */}
-          {!shouldShowCategory('events') && !shouldShowCategory('tasks') && !shouldShowCategory('social') && !shouldShowCategory('promotions') && !shouldShowCategory('recruitment') && !shouldShowCategory('messages') && (
-            <div className="text-center py-16">
-              <p className="text-foreground/40 text-lg">No categories match your filters</p>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
