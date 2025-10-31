@@ -46,16 +46,22 @@ yarn-error.log*
 next-env.d.ts
 
 # Sensitive files - OAuth credentials and tokens
-inbox-agents/token.json
-inbox-agents/credentials.json
+backend/token.json
+backend/credentials.json
 credentials.json
 token.json
 
 # Databases - contain personal email/message data
 *.db
-inbox-agents/*.db
-inbox-agents/mailmind.db
-inbox-agents/beeper-messages.db
-test-mailmind.db
-beeper-messages.db
-mailmind.db
+backend/data/*.db
+backend/data/mailmind.db
+backend/data/beeper-messages.db
+backend/data/test-mailmind.db
+
+# Frontend build artifacts
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+
+# Backend node_modules
+backend/node_modules/

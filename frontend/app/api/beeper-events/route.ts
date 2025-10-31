@@ -11,7 +11,7 @@ async function getBeeperDb(): Promise<Database | null> {
   }
 
   const cwd = process.cwd();
-  const dbPath = path.join(cwd, 'inbox-agents', 'beeper-messages.db');
+  const dbPath = path.join(cwd, '..', 'backend', 'data', 'beeper-messages.db');
 
   try {
     beeperDb = await open({
@@ -33,40 +33,39 @@ export async function GET() {
     if (!db) {
       return NextResponse.json({
         success: true,
-        todos: [],
+        events: [],
         note: 'Beeper database not initialized yet'
       });
     }
 
-    // Get Beeper todos with message details
+    // Get Beeper events with message details
     const query = `
       SELECT
-        t.*,
+        e.*,
         m.from_name,
         m.from_contact,
         m.platform
-      FROM beeper_todos t
-      LEFT JOIN beeper_messages m ON t.message_id = m.id
-      ORDER BY
-        CASE WHEN t.deadline IS NOT NULL THEN 0 ELSE 1 END,
-        t.deadline ASC
+      FROM beeper_events e
+      LEFT JOIN beeper_messages m ON e.message_id = m.id
+      WHERE e.is_on_calendar = 0
+      ORDER BY e.event_date ASC, e.event_time ASC
       LIMIT 50
     `;
 
-    const todos = await db.all(query);
+    const events = await db.all(query);
 
-    console.log(`[GET /api/beeper-todos] Found ${todos.length} Beeper todos`);
+    console.log(`[GET /api/beeper-events] Found ${events.length} Beeper events`);
 
     return NextResponse.json({
       success: true,
-      todos
+      events
     });
   } catch (error) {
-    console.error('[GET /api/beeper-todos] Error:', error);
+    console.error('[GET /api/beeper-events] Error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch Beeper todos',
-      todos: []
+      error: error instanceof Error ? error.message : 'Failed to fetch Beeper events',
+      events: []
     });
   }
 }

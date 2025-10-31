@@ -11,7 +11,7 @@ export async function getDb(): Promise<Database> {
   }
 
   const cwd = process.cwd()
-  const dbPath = path.join(cwd, 'inbox-agents', 'mailmind.db');
+  const dbPath = path.join(cwd, '..', 'backend', 'data', 'mailmind.db');
 
   console.log('[getDb] ========== DATABASE CONNECTION ==========')
   console.log('[getDb] Current working directory:', cwd)

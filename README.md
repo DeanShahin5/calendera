@@ -41,21 +41,21 @@ All platforms in one dashboard. All information auto-organized. All accessible t
 
 ## Core Features
 
-### 📬 Multi-Platform Consolidation
+### Multi-Platform Consolidation
 - **Gmail** - Full email inbox access
 - **Beeper Integration** - iMessage, WhatsApp, Telegram, Signal, Slack, Discord, SMS, Instagram DMs, Messenger
 - Auto-syncs every 5 minutes
 
-### 🤖 AI-Powered Categorization
+### AI-Powered Categorization
 Claude Sonnet 4.5 reads your messages and sorts them:
-- 📅 **Events** — Meetings, hangouts, appointments
-- ✅ **Todos** — Action items with deadlines and priority
-- 💬 **Social** — Personal conversations, life updates
-- 💼 **Recruitment** — Job opportunities
-- 🗑️ **Spam** — Marketing and phishing (auto-detected)
-- 🚨 **Urgent** — Time-sensitive messages
-- 💰 **Financial** — Bills, payments, receipts
-- ℹ️ **Info** — Newsletters, updates
+-  **Events** — Meetings, hangouts, appointments
+-  **Todos** — Action items with deadlines and priority
+-  **Social** — Personal conversations, life updates
+-  **Recruitment** — Job opportunities
+-  **Spam** — Marketing and phishing (auto-detected)
+-  **Urgent** — Time-sensitive messages
+-  **Financial** — Bills, payments, receipts
+-  **Info** — Newsletters, updates
 
 ### Calendar Integration
 - Understands relative dates: "tomorrow at 3pm", "next Friday"
@@ -131,18 +131,30 @@ Calendera helps you stay organized, focused, and in control of your digital life
 ### Installation
 
 ```bash
-# Clone and install frontend
+# Clone repo
 git clone https://github.com/yourusername/calendera.git
 cd calendera
-npm install
 
-# Setup environment
+# Install all dependencies
+npm run install:all
+
+# Or install individually:
+# cd frontend && npm install
+# cd backend && npm install
+```
+
+### Setup Frontend
+
+```bash
+cd frontend
 cp .env.local.example .env.local
 # Add your ANTHROPIC_API_KEY to .env.local
+```
 
-# Install backend
-cd inbox-agents
-npm install
+### Setup Backend
+
+```bash
+cd backend
 cp .env.example .env
 # Add ANTHROPIC_API_KEY to .env
 ```
@@ -152,34 +164,48 @@ cp .env.example .env
 1. [Google Cloud Console](https://console.cloud.google.com/) → Create project
 2. Enable Gmail API + Google Calendar API
 3. Create OAuth 2.0 credentials (Desktop app)
-4. Download as `credentials.json` → move to `inbox-agents/`
-5. Run `node index.js` in `inbox-agents/` to authorize
+4. Download as `credentials.json` → move to `backend/`
+5. Run `node index.js` in `backend/` to authorize
 
 ### Run
 
 ```bash
+# From root directory:
+
 # Terminal 1: Frontend
-npm run dev
+npm run dev:frontend
 # Open http://localhost:3000
 
 # Terminal 2: Gmail Monitor
-cd inbox-agents
-npm run start
+npm run start:backend
 
 # Terminal 3 (optional): Beeper Monitor
-npm run beeper
+npm run start:backend:beeper
+```
+
+Or run individually:
+
+```bash
+# Frontend
+cd frontend && npm run dev
+
+# Backend
+cd backend && npm run start
+
+# Beeper
+cd backend && npm run beeper
 ```
 
 ---
 
 ## Environment Variables
 
-**Frontend (`.env.local`):**
+**Frontend (`frontend/.env.local`):**
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-**Backend (`inbox-agents/.env`):**
+**Backend (`backend/.env`):**
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...
 GMAIL_CHECK_INTERVAL=5
@@ -199,15 +225,6 @@ BEEPER_PLATFORMS=imessage,whatsapp,telegram,discord,slack
 
 ---
 
-## Demo
-
-![Dashboard](https://via.placeholder.com/800x450?text=Dashboard+Screenshot)
-*Main dashboard showing Events, Tasks, Social, and Recruitment sections*
-
-![Chatbot](https://via.placeholder.com/800x450?text=Chatbot+Screenshot)
-*MailMind AI assistant answering natural language queries*
-
----
 
 ## What's Next
 
@@ -224,18 +241,8 @@ BEEPER_PLATFORMS=imessage,whatsapp,telegram,discord,slack
 
 Built for Cal Hacks '25. Contributions welcome!
 
-1. Fork the repo
-2. Create feature branch (`git checkout -b feature/cool-feature`)
-3. Commit changes
-4. Open a Pull Request
-
 ---
 
-## License
-
-MIT License
-
----
 
 ## Contact
 

@@ -1,34 +1,20 @@
 {
   "name": "calendera",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "description": "AI-powered unified inbox for Gmail, Slack, Discord, iMessage, and more",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "dev": "npm run dev:frontend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:backend:beeper": "cd backend && npm run beeper:dev",
+    "start:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm run start",
+    "start:backend:beeper": "cd backend && npm run beeper",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.67.0",
-    "@modelcontextprotocol/sdk": "^1.20.2",
-    "googleapis": "^164.1.0",
-    "next": "^16.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/sqlite3": "^3.1.11",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+  "keywords": ["ai", "inbox", "gmail", "slack", "discord", "claude", "calendar", "productivity"],
+  "author": "Dean Shahin, Naisha Jain, Kevin Nguyen, Vamika Singhal",
+  "license": "MIT"
 }
