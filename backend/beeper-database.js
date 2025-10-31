@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 
 class BeeperDatabase {
-  constructor(dbPath = './beeper-messages.db') {
+  constructor(dbPath = './data/beeper-messages.db') {
     this.dbPath = dbPath;
     this.db = null;
   }

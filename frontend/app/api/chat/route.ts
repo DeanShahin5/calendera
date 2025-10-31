@@ -579,7 +579,7 @@ async function executeQueryBeeperMessages(args: any) {
     const { open } = await import('sqlite')
     const path = await import('path')
 
-    const dbPath = path.join(process.cwd(), 'inbox-agents', 'beeper-messages.db')
+    const dbPath = path.join(process.cwd(), '..', 'backend', 'data', 'beeper-messages.db')
     console.log('[executeQueryBeeperMessages] Database path:', dbPath)
 
     // Check if Beeper database exists

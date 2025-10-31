@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 
 class Database {
-  constructor(dbPath = './mailmind.db') {
+  constructor(dbPath = './data/mailmind.db') {
     this.dbPath = dbPath;
     this.db = null;
   }
